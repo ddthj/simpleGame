@@ -9,25 +9,49 @@ import pygame
 import random
 
 pygame.init()
-window = pygame.display.set_mode((1000,800),pygame.RESIZABLE)
+screenx = 1000
+screeny = 800
+scale = 1
+window = pygame.display.set_mode((screenx,screeny),pygame.RESIZABLE)
 pygame.display.set_caption('phtest')
 white = [255,255,255]
+white = [0,0,0]
 color = [0,100,250]
 
 square_offsets=[(100,315),
                 (100,45),
                 (100,135),
                 (100,225)]
+def r(scale):
+    sides = random.randint(3,10)
+    c = int(360/sides)
+    a = 0
+    o = []
+    for x in range(sides):
+        b = random.randint(1,scale+4)
+        a+=c
+        o.append((b,a))
+    return o
 
 class gobject():
     def __init__(self,center):
-        self.vx = 0
-        self.vy = 0
+        while 1:
+            a = random.randint(0,255)
+            b = random.randint(0,255)
+            c = random.randint(0,255)
+            da = abs(a-b)
+            db = abs(b-c)
+            dc  = abs(c-a)
+            if int((da+db+dc)/3) > 100:
+                break
+        self.color = [a,b,c]
+        self.vx = random.randint(-15,15)
+        self.vy = random.randint(-15,15)
+        self.vr = random.randint(-8,8)
+        self.rotation = 0
         self.centerx = center[0]
         self.centery = center[1]
         self.mass = 100
-        self.rotation = 1
-        self.vr = 45
         
 class poly(gobject):
     def __init__(self,center,offsets):
@@ -45,15 +69,14 @@ class poly(gobject):
             py = (math.sin(math.radians(from_vertical))* item[0])+self.centery
             points.append((px,py))
             #print("Point: %s from_vertical: %s new: %s" % (str(str(item[0]) + ","+str(item[1])),str(from_vertical),str(str(px)+" "+str(py))))
-            
         return points
-    def render(self):
+    def render(self,scale):
         p = self.convert_offsets()
         for x in range(len(p)):
             if x+1 < len(p):
-                pygame.draw.line(window,color,p[x],p[x+1],1)
+                pygame.draw.line(window,self.color,p[x],p[x+1],2)
             else:
-                pygame.draw.line(window,color,p[x],p[0],1)            
+                pygame.draw.line(window,self.color,p[x],p[0],2)            
                    
 def d(a,b):
     return math.sqrt((a[0]-b[0])**2 + (b[1]+a[1])**2)
@@ -75,16 +98,14 @@ def get_inside(point,obj):
         return True
     return False
 
-def tick(objects):
+def tick(objects,scale):
     #move objects
     for item in objects:
         item.centerx += item.vx
         item.centery += item.vy
-        item.rotation += random.randint(1,8)
-        item.vx += random.randint(-2,2)
-        item.vy += random.randint(-2,2)
+        item.rotation += item.vr
         
-        item.render()
+        item.render(scale)
     #check for pairs
     warning = []
     for a in objects:
@@ -104,42 +125,36 @@ def tick(objects):
                 pass
                 #print("c")
 
-def randomP():
-    pass
 c = pygame.time.Clock()
 objs = []
-screenx = 1000
-screeny = 800
+for x in range(50):
+    objs.append(poly((random.randint(0,screenx),random.randint(0,screeny)),r(scale)))
 while 1:
-    r_offsets=[(random.randint(10,150),315),
-                (random.randint(10,150),45),
-                (random.randint(10,150),135),
-                (random.randint(10,150),225)]
     c.tick(20)
     window.fill(white)
-    tick(objs)
+    tick(objs,scale)
     new = objs
     objs = []
     for item in new:
         if item.centerx > screenx+100 or item.centerx < -100 or item.centery > screeny+100 or item.centery < -100:
-            pass
+            objs.append(poly((random.randint(0,screenx),random.randint(0,screeny)),r(scale)))
         else:
             objs.append(item)
-
-    
-    if len(objs) < random.randint(10,25):
-        if random.randint(0,10) % 2 == 0:
-            objs.append(poly((random.randint(0,screenx),random.randint(0,screeny)),square_offsets))
-        else:
-            objs.append(poly((random.randint(0,screenx),random.randint(0,screeny)),r_offsets))
     
     pygame.display.update()
     
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             quit()
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 4:
+                scale += 10
+            else:
+                if scale >= 6:
+                    scale -=10
         elif event.type == pygame.VIDEORESIZE:
+            
             screenx = event.dict['size'][0]
             screeny = event.dict['size'][1]
             window = pygame.display.set_mode((event.dict['size'][0],int(float(event.dict['size'][0]) * float(3/5))),pygame.RESIZABLE)
-    
+            scale = int(screenx/400)**3    
