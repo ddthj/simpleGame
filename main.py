@@ -33,9 +33,45 @@ def r(scale):
         o.append((b,a))
     return o
 
+class me():
+    def __init__(self,color,x,y,r,o):
+        self.vx = 0
+        self.vy = 0
+        self.vr = 0
+        self.danger = 0
+        self.color = color
+        self.centerx = x
+        self.centery = y
+        self.rotation = r
+        self.offsets = o
+        self.dead = False
+    def convert_offsets(self):
+        points = []
+        for item in self.offsets:
+            from_vertical= (item[1] + self.rotation) % 360
+            px = (math.cos(math.radians(from_vertical))* item[0])+self.centerx
+            py = (math.sin(math.radians(from_vertical))* item[0])+self.centery
+            points.append((px,py))
+            #print("Point: %s from_vertical: %s new: %s" % (str(str(item[0]) + ","+str(item[1])),str(from_vertical),str(str(px)+" "+str(py))))
+        return points
+    def test(self):
+        return False
+    def render(self,scale):
+        self.color = [int(self.color[0]/1.2),int(self.color[1]/1.2),int(self.color[2]/1.2)]
+        if self.color[0] < 30 and self.color[1] < 30 and self.color[2] < 30:
+            self.dead = True
+        p = self.convert_offsets()
+        for x in range(len(p)):
+            if x+1 < len(p):
+                pygame.draw.line(window,self.color,p[x],p[x+1],2)
+            else:
+                pygame.draw.line(window,self.color,p[x],p[0],2)
+
 class gobject():
     def __init__(self,center):
+        self.dead = False
         while 1:
+            self.f = False
             a = random.randint(0,255)
             b = random.randint(0,255)
             c = random.randint(0,255)
@@ -45,13 +81,14 @@ class gobject():
             if int((da+db+dc)/3) > 100:
                 break
         self.color = [a,b,c]
-        self.vx = random.randint(-15,15)
-        self.vy = random.randint(-15,15)
-        self.vr = random.randint(-8,8)
+        self.vx = random.randint(-25,25)
+        self.vy = random.randint(-25,25)
+        self.vr = random.randint(-14,14)
         self.rotation = 0
         self.centerx = center[0]
         self.centery = center[1]
         self.mass = 100
+        self.displacement = center[0] + center[1]
         
 class poly(gobject):
     def __init__(self,center,offsets):
@@ -70,7 +107,28 @@ class poly(gobject):
             points.append((px,py))
             #print("Point: %s from_vertical: %s new: %s" % (str(str(item[0]) + ","+str(item[1])),str(from_vertical),str(str(px)+" "+str(py))))
         return points
+    def test(self):
+        if self.f:
+            self.f = False
+            return me(self.color,self.centerx,self.centery,self.rotation,self.offsets)
+        else:
+            return False
     def render(self,scale):
+        if abs(self.centerx + self.centery) > self.displacement + 10 or abs(self.centerx + self.centery) < self.displacement - 10:
+            self.f = True
+        if abs(self.centerx + self.centery) > self.displacement + 50 or abs(self.centerx + self.centery) < self.displacement - 50:
+            while 1:
+                a = random.randint(0,255)
+                b = random.randint(0,255)
+                c = random.randint(0,255)
+                da = abs(a-b)
+                db = abs(b-c)
+                dc  = abs(c-a)
+                if int((da+db+dc)/3) > 100:
+                    break
+            self.color = [a,b,c]
+            self.displacement= self.centerx+self.centery
+            
         p = self.convert_offsets()
         for x in range(len(p)):
             if x+1 < len(p):
@@ -108,11 +166,12 @@ def tick(objects,scale):
         item.render(scale)
     #check for pairs
     warning = []
+    '''
     for a in objects:
         for b in objects:
             if a != b and d((a.centerx,a.centery),(b.centerx,b.centery)) <= a.danger+b.danger:
                 warning.append((a,b))
-
+    '''
     for item in warning:
         a = item[0]
         b = item[1]
@@ -139,7 +198,11 @@ while 1:
         if item.centerx > screenx+100 or item.centerx < -100 or item.centery > screeny+100 or item.centery < -100:
             objs.append(poly((random.randint(0,screenx),random.randint(0,screeny)),r(scale)))
         else:
-            objs.append(item)
+            if item.dead == False:
+                x = item.test()
+                if x != False:
+                    objs.append(x)
+                objs.append(item)
     
     pygame.display.update()
     
