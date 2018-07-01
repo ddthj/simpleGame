@@ -103,12 +103,12 @@ class simulator():
                     if event.key==pygame.K_ESCAPE:
                         pygame.quit()
                         os._exit(1)
-            clock.tick(20)
+            clock.tick(120)
             self.tick()
             self.render()
 
 sim = simulator()
-for x in range(1):
+for x in range(5):
     b = polygon()
     b.location = Vector2([random.randint(0,screen_width),random.randint(0,screen_height)])
     b.velocity = Vector2([random.randint(-3,3),random.randint(-3,3)])
