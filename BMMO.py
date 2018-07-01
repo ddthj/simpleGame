@@ -45,18 +45,17 @@ class polygon():
         self.velocity = Vector2([0,0])
         self.rotation = math.pi/2
         self.rotation_velocity = 0.1
-        self.offsets= [Vector2([0,200]),Vector2([50,150]),Vector2([50,-150]), Vector2([-50,-150]), Vector2([-50,150])]
+        self.offsets= [Vector2([0,200]), Vector2([50,150]), Vector2([50,-150]), Vector2([-50,-150]), Vector2([-50,150])]
         self.triangles = self.makeTriangles()
         self.color = goodColor()
         
     def makeTriangles(self):
+        temp = []
         for x in range(len(self.offsets)):
-            temp = []
             if x+1 < len(self.offsets):
                 temp.append(triangle([self.location,self.toPoint(self.offsets[x]),self.toPoint(self.offsets[x+1])]))
             else:
                 temp.append(triangle([self.location,self.toPoint(self.offsets[x]),self.toPoint(self.offsets[0])]))
-        print(temp)
         return temp
 
     def toPoint(self,offset):
@@ -95,7 +94,7 @@ class simulator():
         clock = pygame.time.Clock()
         while 1:
             events = pygame.event.get()
-            clock.tick(1)
+            clock.tick(20)
             self.tick()
             self.render()
 
