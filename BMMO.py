@@ -93,15 +93,21 @@ class simulator():
     def run(self):
         clock = pygame.time.Clock()
         while 1:
-            events = pygame.event.get()
+            for event in pygame.event.get():
+                if event.type==pygame.KEYDOWN:
+                    if event.key==pygame.K_ESCAPE:
+                        pygame.quit()
+                        os._exit(1)
             clock.tick(20)
             self.tick()
             self.render()
 
 sim = simulator()
-b = polygon()
-b.location = Vector2([screen_width/2,screen_height/2])
-b.velocity = Vector2([1,2])
-sim.objects.append(b)
+for x in range(1):
+    b = polygon()
+    b.location = Vector2([random.randint(0,screen_width),random.randint(0,screen_height)])
+    b.velocity = Vector2([random.randint(-3,3),random.randint(-3,3)])
+    b.rotation_velocity = random.uniform(-0.2,0.2)
+    sim.objects.append(b)
 sim.run()
                 
