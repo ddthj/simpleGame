@@ -59,8 +59,12 @@ class polygon():
         return temp
 
     def toPoint(self,offset):
-        x = self.location.data[0] + offset.data[0]*math.cos(self.rotation%(2*math.pi))
-        y = self.location.data[1] + offset.data[1]*math.sin(self.rotation%(2*math.pi))
+
+        c = math.cos(self.rotation)
+        s = math.sin(self.rotation)
+
+        x = self.location.data[0] + c * offset.data[0] - s * offset.data[1]
+        y = self.location.data[1] + s * offset.data[0] + c * offset.data[1]
         return Vector2([x,y])
 
     def tick(self,forward = True):
@@ -70,6 +74,7 @@ class polygon():
         else:
             self.location -= self.velocity
             self.rotation -= self.rotation_velocity
+
         self.triangles = self.makeTriangles()
 
     def render(self):
