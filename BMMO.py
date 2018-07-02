@@ -82,7 +82,42 @@ class polygon():
             pygame.draw.line(window,self.color,item.points[0].data,item.points[1].data,1)
             pygame.draw.line(window,self.color,item.points[1].data,item.points[2].data,1)
             pygame.draw.line(window,self.color,item.points[2].data,item.points[0].data,1)
-            
+
+def project(triangle,axis):
+    maxPoint = triangle.points[0] * axis
+    minPoint = triangle.points[0] * axis
+    for item in triangle.points:
+        if item * axis > maxPoint:
+            maxPoint =item * axis
+        if item * axis < minPoint:
+            minPoint = item * axis
+    return minPoint,maxPoint
+
+def sat(a,b):
+    flag = False
+    for triangle in a.triangles:
+        axes = []
+        for x in range(3):
+            if x+1 < 3:
+                axis = triangle.points[x] - triangle.points[x+1]
+                axis.data[1] *= -1
+            else:
+                axis =  triangle.points[x] - triangle.points[0]
+                axis.data[1] *= -1
+            axes.append(axis)
+        for item in axes:
+            for other in b.triangles:
+                amin, amax = project(triangle,item)
+                bmin, bmax = project(other,item)
+                if amin > bmin and amin > bmax:
+                    flag = True
+                if bmin > amin and bmin > bmax:
+                    flag = True
+    if flag == False:
+        return True
+    return False
+
+
 class simulator():
     def __init__(self):
         self.objects = []
@@ -90,6 +125,11 @@ class simulator():
     def tick(self):
         for item in self.objects:
             item.tick()
+        for a in self.objects:
+            for b in self.objects:
+                if a != b:
+                    print(sat(a,b))
+                    
     def render(self):
         window.fill(black)
         for item in self.objects:
@@ -103,12 +143,12 @@ class simulator():
                     if event.key==pygame.K_ESCAPE:
                         pygame.quit()
                         os._exit(1)
-            clock.tick(120)
+            clock.tick(60)
             self.tick()
             self.render()
 
 sim = simulator()
-for x in range(5):
+for x in range(2):
     b = polygon()
     b.location = Vector2([random.randint(0,screen_width),random.randint(0,screen_height)])
     b.velocity = Vector2([random.randint(-3,3),random.randint(-3,3)])

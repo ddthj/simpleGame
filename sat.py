@@ -195,6 +195,5 @@ class sim():
                 self.tick()
                 good = False
                 pygame.display.update()
-            
 
 sim = sim()
