@@ -113,16 +113,14 @@ def isGap(tria,trib):
         bmin, bmax = project(trib,item)
         if amin > bmin and amin > bmax:
             return True
-        if bmin > amin and bmin > bmax:
+        if bmin > amin and bmin > amax:
             return True
     return False
 
 def sat(a,b):
     for tria in a.triangles:
         for trib in b.triangles:
-            if isGap(tria,trib):
-                break
-            else:
+            if not isGap(tria,trib):
                 return True
     return False
 
