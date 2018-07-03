@@ -11,6 +11,7 @@ pygame.display.set_caption("BMMO")
 
 black = (0,0,0)
 
+
 def goodColor():
     while 1:
         a = random.randint(0,255)
@@ -32,6 +33,12 @@ class Vector2():
         return Vector2([self.data[0]-value.data[0],self.data[1]-value.data[1]])
     def __mul__(self,value):
         return self.data[0]*value.data[0] + self.data[1]*value.data[1]
+
+class Matrix2():
+    def __init__(self,data):
+        self.data = data
+    def __mul__(self,value):
+        return Vector2([value.data[0]*self.data[0][0] + value.data[1]*self.data[1][0], value.data[0]*self.data[0][1] + value.data[1]*self.data[1][1]])
 
 class triangle():
     def __init__(self,points):
@@ -88,35 +95,36 @@ def project(triangle,axis):
     minPoint = triangle.points[0] * axis
     for item in triangle.points:
         if item * axis > maxPoint:
-            maxPoint =item * axis
+            maxPoint = item * axis
         if item * axis < minPoint:
             minPoint = item * axis
     return minPoint,maxPoint
 
-def sat(a,b):
-    flag = False
-    for triangle in a.triangles:
-        axes = []
-        for x in range(3):
-            if x+1 < 3:
-                axis = triangle.points[x] - triangle.points[x+1]
-                axis.data[1] *= -1
-            else:
-                axis =  triangle.points[x] - triangle.points[0]
-                axis.data[1] *= -1
-            axes.append(axis)
-        for item in axes:
-            for other in b.triangles:
-                amin, amax = project(triangle,item)
-                bmin, bmax = project(other,item)
-                if amin > bmin and amin > bmax:
-                    flag = True
-                if bmin > amin and bmin > bmax:
-                    flag = True
-    if flag == False:
-        return True
+def isGap(tria,trib):
+    axes = []            
+    axes.append(rotator * (tria.points[0] - tria.points[1]))
+    axes.append(rotator * (tria.points[1] - tria.points[2]))
+    axes.append(rotator * (tria.points[2] - tria.points[0]))
+    axes.append(rotator * (trib.points[0] - trib.points[1]))
+    axes.append(rotator * (trib.points[1] - trib.points[2]))
+    axes.append(rotator * (trib.points[2] - trib.points[0]))
+    for item in axes:
+        amin, amax = project(tria,item)
+        bmin, bmax = project(trib,item)
+        if amin > bmin and amin > bmax:
+            return True
+        if bmin > amin and bmin > bmax:
+            return True
     return False
 
+def sat(a,b):
+    for tria in a.triangles:
+        for trib in b.triangles:
+            if isGap(tria,trib):
+                break
+            else:
+                return True
+    return False
 
 class simulator():
     def __init__(self):
@@ -142,11 +150,13 @@ class simulator():
                 if event.type==pygame.KEYDOWN:
                     if event.key==pygame.K_ESCAPE:
                         pygame.quit()
-                        os._exit(1)
-            clock.tick(60)
+                        exit
+            clock.tick(5)
             self.tick()
             self.render()
 
+
+rotator = Matrix2([[0,-1],[1,0]])
 sim = simulator()
 for x in range(2):
     b = polygon()
