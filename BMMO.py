@@ -1,6 +1,6 @@
 import math
 import pygame
-import random
+from physics import *
 
 pygame.init()
 
@@ -11,41 +11,6 @@ pygame.display.set_caption("BMMO")
 
 black = (0,0,0)
 
-
-def goodColor():
-    while 1:
-        a = random.randint(0,255)
-        b = random.randint(0,255)
-        c = random.randint(0,255)
-        da = abs(a-b)
-        db = abs(b-c)
-        dc  = abs(c-a)
-        if int((da+db+dc)/3) > 100:
-            break
-    return a,b,c
-
-class Vector2():
-    def __init__(self,data):
-        self.data = data
-    def __add__(self,value):
-        return Vector2([self.data[0]+value.data[0],self.data[1]+value.data[1]])
-    def __sub__(self,value):
-        return Vector2([self.data[0]-value.data[0],self.data[1]-value.data[1]])
-    def __mul__(self,value):
-        return self.data[0]*value.data[0] + self.data[1]*value.data[1]
-
-class Matrix2():
-    def __init__(self,data):
-        self.data = data
-    def __mul__(self,value):
-        return Vector2([value.data[0]*self.data[0][0] + value.data[1]*self.data[1][0], value.data[0]*self.data[0][1] + value.data[1]*self.data[1][1]])
-
-class triangle():
-    def __init__(self,points):
-        self.points = points
-    def toString(self):
-        return 
-
 class polygon():
     def __init__(self):
         self.location = Vector2([0,0])
@@ -55,6 +20,8 @@ class polygon():
         self.offsets= [Vector2([0,200]), Vector2([50,150]), Vector2([50,-150]), Vector2([-50,-150]), Vector2([-50,150])]
         self.triangles = self.makeTriangles()
         self.color = goodColor()
+        self.events = []
+        self.mass = 10
         
     def makeTriangles(self):
         temp = []
@@ -66,22 +33,22 @@ class polygon():
         return temp
 
     def toPoint(self,offset):
-
         c = math.cos(self.rotation)
         s = math.sin(self.rotation)
-
         x = self.location.data[0] + c * offset.data[0] - s * offset.data[1]
         y = self.location.data[1] + s * offset.data[0] + c * offset.data[1]
         return Vector2([x,y])
 
     def tick(self,forward = True):
+        for event in self.events:
+            if isinstance(event,force):
+                pass
         if forward:
             self.location += self.velocity
             self.rotation += self.rotation_velocity
         else:
             self.location -= self.velocity
             self.rotation -= self.rotation_velocity
-
         self.triangles = self.makeTriangles()
 
     def render(self):
@@ -90,43 +57,21 @@ class polygon():
             pygame.draw.line(window,self.color,item.points[1].data,item.points[2].data,1)
             pygame.draw.line(window,self.color,item.points[2].data,item.points[0].data,1)
 
-def project(triangle,axis):
-    maxPoint = triangle.points[0] * axis
-    minPoint = triangle.points[0] * axis
-    for item in triangle.points:
-        if item * axis > maxPoint:
-            maxPoint = item * axis
-        if item * axis < minPoint:
-            minPoint = item * axis
-    return minPoint,maxPoint
+class collision():
+    def __init__(self,a,b):
+        self.a = a
+        self.b = b
 
-def isGap(tria,trib):
-    axes = []            
-    axes.append(rotator * (tria.points[0] - tria.points[1]))
-    axes.append(rotator * (tria.points[1] - tria.points[2]))
-    axes.append(rotator * (tria.points[2] - tria.points[0]))
-    axes.append(rotator * (trib.points[0] - trib.points[1]))
-    axes.append(rotator * (trib.points[1] - trib.points[2]))
-    axes.append(rotator * (trib.points[2] - trib.points[0]))
-    for item in axes:
-        amin, amax = project(tria,item)
-        bmin, bmax = project(trib,item)
-        if amin > bmin and amin > bmax:
-            return True
-        if bmin > amin and bmin > amax:
-            return True
-    return False
-
-def sat(a,b):
-    for tria in a.triangles:
-        for trib in b.triangles:
-            if not isGap(tria,trib):
-                return True
-    return False
+class force():
+    def __init__(self,point,magnitude,direction):
+        self.point = point
+        self.magnitude = magnitude
+        self.direction = direction
 
 class simulator():
     def __init__(self):
         self.objects = []
+        self.collisions = []
 
     def tick(self):
         for item in self.objects:
@@ -134,13 +79,14 @@ class simulator():
         for a in self.objects:
             for b in self.objects:
                 if a != b:
-                    print(sat(a,b))
+                    self.collisions.append(collision(a,b))
                     
     def render(self):
         window.fill(black)
         for item in self.objects:
             item.render()
         pygame.display.update()
+        
     def run(self):
         clock = pygame.time.Clock()
         while 1:
@@ -153,8 +99,6 @@ class simulator():
             self.tick()
             self.render()
 
-
-rotator = Matrix2([[0,-1],[1,0]])
 sim = simulator()
 for x in range(2):
     b = polygon()
