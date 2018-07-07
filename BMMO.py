@@ -40,12 +40,18 @@ class polygon():
         return Vector2([x,y])
 
     def tick(self,forward = True):
-        for event in self.events:
-            if isinstance(event,force):
-                pass
         if forward:
+            tempVelocity = Vector2([0,0])
+            tempTorque = 0
+            for event in self.events:
+                if isinstance(event,force):
+                    tempVelocity += event.vector
+            self.velocity += tempVelocity
+
+            
             self.location += self.velocity
             self.rotation += self.rotation_velocity
+            self.events = []
         else:
             self.location -= self.velocity
             self.rotation -= self.rotation_velocity
@@ -57,16 +63,10 @@ class polygon():
             pygame.draw.line(window,self.color,item.points[1].data,item.points[2].data,1)
             pygame.draw.line(window,self.color,item.points[2].data,item.points[0].data,1)
 
-class collision():
-    def __init__(self,a,b):
-        self.a = a
-        self.b = b
-
 class force():
-    def __init__(self,point,magnitude,direction):
+    def __init__(self,point,vector):
         self.point = point
-        self.magnitude = magnitude
-        self.direction = direction
+        self.vector = vector
 
 class simulator():
     def __init__(self):
@@ -74,12 +74,33 @@ class simulator():
         self.collisions = []
 
     def tick(self):
+        self.collisions = []
         for item in self.objects:
             item.tick()
         for a in self.objects:
             for b in self.objects:
                 if a != b:
-                    self.collisions.append(collision(a,b))
+                    collision = sat(a,b)
+                    if collision.needshandle == True:
+                        self.collisions.append(collision)
+        for item in self.collisions:
+            forceVector = normalize(averageTriangle(item.tria) - averageTriangle(item.trib))
+            appliedForce = (item.overlap / ( (1/item.a.mass) + (1/item.b.mass)))/50
+            forceVector.data[0] *= appliedForce
+            forceVector.data[1] *= appliedForce
+            finala = force(item.a.location,forceVector)
+            forceVectorB = Vector2([forceVector.data[0] * -1,forceVector.data[1] * -1])
+            finalb =  force(item.b.location,forceVectorB)
+
+            item.a.tick(False)
+            item.b.tick(False)
+            item.a.events.append(finala)
+            item.b.events.append(finalb)
+            
+            item.a.tick(True)
+            item.b.tick(True)
+
+        
                     
     def render(self):
         window.fill(black)
@@ -95,16 +116,21 @@ class simulator():
                     if event.key==pygame.K_ESCAPE:
                         pygame.quit()
                         exit
-            clock.tick(5)
+            clock.tick(20)
             self.tick()
             self.render()
 
 sim = simulator()
-for x in range(2):
-    b = polygon()
-    b.location = Vector2([random.randint(0,screen_width),random.randint(0,screen_height)])
-    b.velocity = Vector2([random.randint(-3,3),random.randint(-3,3)])
-    b.rotation_velocity = random.uniform(-0.2,0.2)
-    sim.objects.append(b)
+a = polygon()
+a.location = Vector2([0,0])
+a.velocity = Vector2([random.randint(2,3),random.randint(2,3)])
+arotation_velocity = random.uniform(-0.02,0.02)
+sim.objects.append(a)
+
+b = polygon()
+b.location = Vector2([screen_width,screen_height])
+b.velocity = Vector2([random.randint(-3,-2),random.randint(-3,-2)])
+b.rotation_velocity = random.uniform(-0.02,0.02)
+sim.objects.append(b)
 sim.run()
                 
