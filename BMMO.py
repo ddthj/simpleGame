@@ -22,6 +22,8 @@ class polygon():
         self.color = goodColor()
         self.events = []
         self.mass = 10
+        self.inertia = self.mass * 250**2
+        self.collideList = []
         
     def makeTriangles(self):
         temp = []
@@ -45,10 +47,12 @@ class polygon():
             tempTorque = 0
             for event in self.events:
                 if isinstance(event,force):
-                    tempVelocity += event.vector
+                    tempTorque += (event.point-self.location).cross(event.vector)
+                    tempVelocity += event.vector.div(self.mass)
+                    
             self.velocity += tempVelocity
+            self.rotation_velocity += (tempTorque/self.inertia)
 
-            
             self.location += self.velocity
             self.rotation += self.rotation_velocity
             self.events = []
@@ -74,7 +78,6 @@ class simulator():
         self.collisions = []
 
     def tick(self):
-        self.collisions = []
         for item in self.objects:
             item.tick()
         for a in self.objects:
@@ -82,25 +85,25 @@ class simulator():
                 if a != b:
                     collision = sat(a,b)
                     if collision.needshandle == True:
-                        self.collisions.append(collision)
-        for item in self.collisions:
-            forceVector = normalize(averageTriangle(item.tria) - averageTriangle(item.trib))
-            appliedForce = (item.overlap / ( (1/item.a.mass) + (1/item.b.mass)))/50
-            forceVector.data[0] *= appliedForce
-            forceVector.data[1] *= appliedForce
-            finala = force(item.a.location,forceVector)
-            forceVectorB = Vector2([forceVector.data[0] * -1,forceVector.data[1] * -1])
-            finalb =  force(item.b.location,forceVectorB)
-
-            item.a.tick(False)
-            item.b.tick(False)
-            item.a.events.append(finala)
-            item.b.events.append(finalb)
-            
-            item.a.tick(True)
-            item.b.tick(True)
-
-        
+                        item = collision
+                        forceVector =item.axis
+                        appliedForce = (item.overlap / ( (1/item.a.mass) + (1/item.b.mass)))
+                        forceVector.data[0] *= appliedForce
+                        forceVector.data[1] *= appliedForce
+                        contactPoint = (averageTriangle(item.tria) + averageTriangle(item.trib)).div(2)
+                        finala = force(contactPoint,forceVector)
+                        forceVectorB = Vector2([forceVector.data[0] * -1,forceVector.data[1] * -1])
+                        finalb =  force(contactPoint,forceVectorB)
+                        item.a.tick(False)
+                        item.b.tick(False)
+                        item.a.events.append(finala)
+                        item.b.events.append(finalb)
+                        item.a.tick(True)
+                        item.b.tick(True)
+                        
+                        #self.collisions.append(collision)
+        #for item in self.collisions:
+            #direction = normalize(averageTriangle(item.tria) - averageTriangle(item.trib))
                     
     def render(self):
         window.fill(black)
@@ -122,15 +125,35 @@ class simulator():
 
 sim = simulator()
 a = polygon()
-a.location = Vector2([0,0])
-a.velocity = Vector2([random.randint(2,3),random.randint(2,3)])
-arotation_velocity = random.uniform(-0.02,0.02)
+a.location = Vector2([400,100])
+a.velocity = Vector2([0,2])#random.randint(2,3),random.randint(2,3)])
+a.rotation_velocity = 0#random.uniform(-0.02,0.02)
+a.rotation = 3.14/2
 sim.objects.append(a)
 
 b = polygon()
-b.location = Vector2([screen_width,screen_height])
-b.velocity = Vector2([random.randint(-3,-2),random.randint(-3,-2)])
-b.rotation_velocity = random.uniform(-0.02,0.02)
+b.location = Vector2([250,500])
+b.velocity = Vector2([0,-3])
+b.rotation_velocity = 0
+b.rotation = 0
+b.mass = 20
 sim.objects.append(b)
+
+c = polygon()
+c.location = Vector2([900,250])
+c.velocity = Vector2([-10,1])
+c.rotation_velocity = -0.005
+c.rotation = 3.14/2
+c.mass = 2
+sim.objects.append(c)
+
+d = polygon()
+d.location = Vector2([550,1000])
+d.velocity = Vector2([0,-8])
+d.rotation_velocity = 0.005
+d.rotation = 0
+d.mass = 15
+sim.objects.append(d)
+
 sim.run()
                 
