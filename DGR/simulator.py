@@ -16,16 +16,12 @@ class Simulator:
         for item in self.objects:
             item.tick()
         collisions = []
-        names = []
         for a in self.objects:
-            a.color = (255,255,255)
             for b in self.objects:
-                if a.name != b.name and a.name+b.name not in names:
+                if a != b:
                     result = sat(a,b)
                     if result[0] == True:
-                        temp = collision(a,b,result[1],result[2])
-                        collisions.append(temp)
-                        names.append(temp.name)
+                        collisions.append(collision(a,b,result[1],result[2]))
                         
         for item in collisions:
             item.a.color = (255,0,0)
@@ -58,12 +54,12 @@ rect = [Vector3(100,200,0),Vector3(100,-200,0),Vector3(-100,-200,0),Vector3(-100
 x = Simulator()
 
 y = physicsObject(1,square)
-y.location = Vector3(540,250,0)
+y.location = Vector3(540,150,0)
 y.rotation = math.pi / 4
 #y.velocity = Vector3(-6,0,0)
 
 z = physicsObject(2,rect)
-z.location = Vector3(270,250,0)
+z.location = Vector3(110,250,0)
 #z.velocity = Vector3(4,0,0)
 
 x.objects = [y,z]
