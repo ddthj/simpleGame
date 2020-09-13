@@ -1,125 +1,96 @@
+from PhysicsObjects import Entity
+from Suntherland import suntherland
 import math
-import random
 
-class Vector2():
-    def __init__(self,data):
-        self.data = data
-    def __add__(self,value):
-        return Vector2([self.data[0]+value.data[0],self.data[1]+value.data[1]])
-    def __sub__(self,value):
-        return Vector2([self.data[0]-value.data[0],self.data[1]-value.data[1]])
-    def __mul__(self,value):
-        return self.data[0]*value.data[0] + self.data[1]*value.data[1]
-    def div(self,value):
-        self.data[0] /= value
-        self.data[1] /= value
-        return self
-    def cross(self,value):
-        return (self.data[0] * value.data[1])-(self.data[1]*value.data[0])
-    def mag(self):
-        return math.sqrt(self.data[0]**2 + self.data[1]**2)
 
-class Matrix2():
-    def __init__(self,data):
-        self.data = data
-    def __mul__(self,value):
-        return Vector2([value.data[0]*self.data[0][0] + value.data[1]*self.data[1][0], value.data[0]*self.data[0][1] + value.data[1]*self.data[1][1]])
-
-def normalize(vector):
-    mag = math.sqrt(vector.data[0]**2 + vector.data[1]**2)
-    vector.data[1] /= mag
-    vector.data[0] /= mag
-    return vector
-
-def distance(a,b):
-    return math.sqrt((a.data[0]-b.data[0])**2 + (a.data[1]-b.data[1])**2)
-
-def sign(x):
-    if x >=0:
-        return 1
-    else:
-        return -1
-
-class triangle():
-    def __init__(self,points):
-        self.points = points
-    def toString(self):
-        return ""
-
-def averageTriangle(triangle):
-    x = 0
-    y = 0
-    for point in triangle.points:
-        x += point.data[0]
-        y += point.data[1]
-    return Vector2([x/3,y/3])
-
-class collision():
-    def __init__(self,a,b,tria,trib,overlap,x,axis):
-        self.needshandle = x
+class Collision:
+    def __init__(self, a: Entity, b: Entity, axis, gap):
         self.a = a
         self.b = b
-        self.tria = tria
-        self.trib = trib
-        self.overlap = overlap
         self.axis = axis
+        self.gap = gap
+        self.manifold = None
 
-def project(triangle,axis):
-    maxPoint = triangle.points[0] * axis
-    minPoint = triangle.points[0] * axis
-    for item in triangle.points:
-        if item * axis > maxPoint:
-            maxPoint = item * axis
-        if item * axis < minPoint:
-            minPoint = item * axis
-    return minPoint,maxPoint
+    def resolve(self):
+        # Determine Contact Point
+        self.manifold = self.get_manifold()
+        contact_point = sum(self.manifold) / len(self.manifold)
 
-def isGap(tria,trib):
+        # Translate objects apart
+        total = self.a.mass + self.b.mass
+        if total > 0:
+            # Translate objects apart
+            self.a.location -= (self.axis * (self.gap * self.a.mass / total))
+            self.b.location += (self.axis * (self.gap * self.b.mass / total))
+
+            # Determine direction/distance to contact point and relative velocity at the contact point
+            a_to_contact, a_dist = (contact_point - self.a.location).normalize(True)
+            b_to_contact, b_dist = (contact_point - self.b.location).normalize(True)
+            a_perp = a_to_contact.cross((0, 0, 1))
+            b_perp = b_to_contact.cross((0, 0, 1))
+            a_point_vel = self.a.velocity + (a_perp * a_dist * self.a.rvel * 0.8)  # todo-improve 0.8, shouldn't need it
+            b_point_vel = self.b.velocity + (b_perp * b_dist * self.b.rvel * 0.8)
+            relative_velocity = b_point_vel - a_point_vel
+
+            # Calculate normal and tangent components of velocity
+            normal = self.axis
+            tangent = self.axis.cross((0, 0, 1))
+            normal_velocity = relative_velocity.dot(normal)
+            tangent_velocity = relative_velocity.dot(tangent)
+
+            friction = math.sqrt(self.a.friction ** 2 + self.b.friction ** 2)
+            restitution = min(self.a.restitution, self.b.restitution)
+            normal_impulse = -(1 + restitution) * normal_velocity / (self.a.inv_mass + self.b.inv_mass)
+            tangent_impulse = -(1 + restitution) + friction * tangent_velocity / (self.a.inv_mass + self.b.inv_mass)
+
+            self.a.apply_force(-(normal_impulse * normal) + (tangent_impulse * tangent))
+            self.b.apply_force((normal_impulse * normal) - (tangent_impulse * tangent))
+            self.a.apply_torque(-(a_perp.dot(normal) * normal_impulse) - (a_perp.dot(tangent) * tangent_impulse))
+            self.b.apply_torque((b_perp.dot(normal) * normal_impulse) - (b_perp.dot(tangent) * tangent_impulse))
+
+    def get_manifold(self):
+        return suntherland(self.a.points, self.b.points)
+
+
+def get_axes(points):
     axes = []
-    min_axis = None
-    min_overlap = 9999
-    axes.append(normalize(rotator * (tria.points[0] - tria.points[1])))
-    axes.append(normalize(rotator * (tria.points[1] - tria.points[2])))
-    axes.append(normalize(rotator * (tria.points[2] - tria.points[0])))
-    axes.append(normalize(rotator * (trib.points[0] - trib.points[1])))
-    axes.append(normalize(rotator * (trib.points[1] - trib.points[2])))
-    axes.append(normalize(rotator * (trib.points[2] - trib.points[0])))
-    for item in axes:
-        amin, amax = project(tria,item)
-        bmin, bmax = project(trib,item)
-        if amin > bmin and amin > bmax:
-            return True,-1,min_axis
-        elif bmin > amin and bmin > amax:
-            return True,-1,min_axis
+    for i in range(len(points)):
+        if i < len(points) - 1:
+            axes.append((points[i + 1] - points[i]).normalize())
         else:
-            overlapA = amax - bmin
-            overlapB = bmax - amin
-            if overlapA < min_overlap:
-                min_overlap = overlapA
-                min_axis = item
-            if overlapB < min_overlap:
-                min_overlap = overlapB
-                min_axis = item
-    return False,min_overlap,min_axis
+            axes.append((points[0] - points[i]).normalize())
+    return axes
 
-def sat(a,b):
-    for tria in a.triangles:
-        for trib in b.triangles:
-            result, overlap,axis =  isGap(tria,trib)
-            if not result:
-                return collision(a,b,tria,trib,overlap,True,axis)
-    return collision(a,b,tria,trib,-1,False,axis)
 
-def goodColor():
-    while 1:
-        a = random.randint(0,255)
-        b = random.randint(0,255)
-        c = random.randint(0,255)
-        da = abs(a-b)
-        db = abs(b-c)
-        dc  = abs(c-a)
-        if int((da+db+dc)/3) > 150:
-            break
-    return a,b,c
+def sat(collision: Collision):
+    a = collision.a
+    b = collision.b
+    # Returns True if two PhysicsObjects are colliding, as well as the min axis and overlap amount
+    axes = get_axes(a.get_points()) + get_axes(b.get_points())
+    min_axis = axes[0]
+    min_over = 9999
+    for axis in axes:
+        ap = sorted([axis.dot(point) for point in a.points])
+        bp = sorted([axis.dot(point) for point in b.points])
+        if ap[0] > bp[-1] or bp[0] > ap[-1]:
+            return False
+        else:
+            a_over = ap[-1] - bp[0]
+            b_over = bp[-1] - ap[0]
+            if a_over < min_over:
+                min_over = a_over
+                min_axis = axis
+            if b_over < min_over:
+                min_over = b_over
+                min_axis = -axis  # negative to ensure the axis always points from a to b
+    collision.axis = min_axis
+    collision.gap = min_over
+    return True
 
-rotator = Matrix2([[0,-1],[1,0]])
+
+def center_rect_collision(a, b):
+    if abs(a[0] - b[0]) > a[2] + b[2]:
+        return False
+    elif abs(a[1] - b[1]) > a[3] + b[3]:
+        return False
+    return True
