@@ -6,6 +6,10 @@ def rectangle(x, y):
     return [Vector3(x, y, 0), Vector3(x, -y, 0), Vector3(-x, -y, 0), Vector3(-x, y, 0)]
 
 
+def boat(x, y, z):
+    return [Vector3(0, z, 0), Vector3(x, y, 0), Vector3(x, -y, 0), Vector3(-x, -y, 0), Vector3(-x, y, 0)]
+
+
 def render_polygon(poly, color, window, loop=True):
     for i in range(len(poly)):
         if i + 1 < len(poly):
@@ -61,55 +65,5 @@ def suntherland(subject, scissors):
             elif inside(s):
                 output.append(intersection())
             s = vertex
-        v1 = v2
-    return output
-
-
-def suntherland_debug(subject, scissors, window):
-    def inside(p):
-        return (v2[0] - v1[0]) * (p[1] - v1[1]) < (v2[1] - v1[1]) * (p[0] - v1[0])
-
-    def intersection():
-        dc = [v1[0] - v2[0], v1[1] - v2[1]]
-        dp = [s1[0] - s2[0], s1[1] - s2[1]]
-        n1 = v1[0] * v2[1] - v1[1] * v2[0]
-        n2 = s1[0] * s2[1] - s1[1] * s2[0]
-        n3 = 1.0 / (dc[0] * dp[1] - dc[1] * dp[0])
-        return Vector3((n1 * dp[0] - n2 * dc[0]) * n3, (n1 * dp[1] - n2 * dc[1]) * n3, 0)
-
-    print(clockwise_convex(subject), clockwise_convex(scissors))
-    output = subject
-    v1 = scissors[-1]
-
-    for v2 in scissors:
-        input_list = output
-        output = []
-        s1 = input_list[-1]
-
-        for s2 in input_list:
-            input(">")
-            window.fill((0, 0, 0))
-            render_polygon(scissors, (255, 0, 0), window)
-            if len(input_list) > 1:
-                render_polygon(input_list, (0, 255, 255), window)
-            if len(output) > 1:
-                render_polygon(output, (0, 255, 0), window, False)
-            pygame.draw.line(window, (255, 0, 255), v1.copy().render(), v2.copy().render(), 2)
-            pygame.draw.line(window, (255, 255, 0), s1.copy().render(), s2.copy().render(), 2)
-            pygame.display.update()
-            pygame.event.get()
-
-            if inside(s2):
-                print("s2 inside")
-                if not inside(s1):
-                    print("s1 outside, intersection")
-                    output.append(intersection())
-                output.append(s2)
-            elif inside(s1):
-                print("s1 inside, intersection")
-                output.append(intersection())
-            else:
-                print("both outside")
-            s1 = s2
         v1 = v2
     return output

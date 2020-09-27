@@ -66,7 +66,7 @@ class QuadTree:
 
 class World:
     def __init__(self, objects):
-        self.gravity = Vector3(0, 20, 0)
+        self.gravity = Vector3(0, 10, 0)
         self.tick_time = 0.0333333333333334
         self.tree = QuadTree(0, (0, 0, 1000, 1000))
         self.objects = objects
@@ -75,10 +75,11 @@ class World:
         self.tree.clear()
         for obj in self.objects:
             obj.tick(self.tick_time, self)
-            self.tree.insert(obj)
+            if obj.collidable:
+                self.tree.insert(obj)
+
         potential_collisions = []
         cull_tracker = {x: [] for x in self.objects}
-
         for node in self.tree.get_child_nodes():
             for a in node:
                 for b in node:

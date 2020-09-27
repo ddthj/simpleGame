@@ -13,11 +13,12 @@ class Collision:
 
     def resolve(self):
         # Determine Contact Point
-        self.manifold = self.get_manifold()
+        self.manifold = suntherland(self.a.points, self.b.points)
         contact_point = sum(self.manifold) / len(self.manifold)
 
         # Translate objects apart
         total = self.a.mass + self.b.mass
+        inv_total = self.a.inv_mass + self.b.inv_mass
         if total > 0:
             # Translate objects apart
             self.a.location -= (self.axis * (self.gap * self.a.mass / total))
@@ -28,37 +29,36 @@ class Collision:
             b_to_contact, b_dist = (contact_point - self.b.location).normalize(True)
             a_perp = a_to_contact.cross((0, 0, 1))
             b_perp = b_to_contact.cross((0, 0, 1))
-            a_point_vel = self.a.velocity + (a_perp * a_dist * self.a.rvel * 0.8)  # todo-improve 0.8, shouldn't need it
-            b_point_vel = self.b.velocity + (b_perp * b_dist * self.b.rvel * 0.8)
+            a_point_vel = self.a.velocity + (a_perp * a_dist * self.a.rvel)
+            b_point_vel = self.b.velocity + (b_perp * b_dist * self.b.rvel)
             relative_velocity = b_point_vel - a_point_vel
 
             # Calculate normal and tangent components of velocity
             normal = self.axis
-            tangent = self.axis.cross((0, 0, 1))
+            tangent = self.axis.cross((0, 0, -1))
             normal_velocity = relative_velocity.dot(normal)
             tangent_velocity = relative_velocity.dot(tangent)
 
             friction = math.sqrt(self.a.friction ** 2 + self.b.friction ** 2)
-            restitution = min(self.a.restitution, self.b.restitution)
-            normal_impulse = -(1 + restitution) * normal_velocity / (self.a.inv_mass + self.b.inv_mass)
-            tangent_impulse = -(1 + restitution) + friction * tangent_velocity / (self.a.inv_mass + self.b.inv_mass)
+            restitution = min(self.a.restitution, self.b.restitution) + 1
+            normal_impulse = -(restitution * normal_velocity) / inv_total
+            tangent_impulse = -(friction * tangent_velocity) / inv_total
 
-            self.a.apply_force(-(normal_impulse * normal) + (tangent_impulse * tangent))
-            self.b.apply_force((normal_impulse * normal) - (tangent_impulse * tangent))
-            self.a.apply_torque(-(a_perp.dot(normal) * normal_impulse) - (a_perp.dot(tangent) * tangent_impulse))
-            self.b.apply_torque((b_perp.dot(normal) * normal_impulse) - (b_perp.dot(tangent) * tangent_impulse))
+            total_impulse = (normal * normal_impulse) + (tangent * tangent_impulse)
 
-    def get_manifold(self):
-        return suntherland(self.a.points, self.b.points)
+            self.a.apply_force(-total_impulse)
+            self.b.apply_force(total_impulse)
+            self.a.apply_torque(-a_perp.dot(total_impulse))
+            self.b.apply_torque(b_perp.dot(total_impulse))
 
 
 def get_axes(points):
     axes = []
     for i in range(len(points)):
         if i < len(points) - 1:
-            axes.append((points[i + 1] - points[i]).normalize())
+            axes.append((points[i + 1] - points[i]).normalize().cross((0, 0, 1)))
         else:
-            axes.append((points[0] - points[i]).normalize())
+            axes.append((points[0] - points[i]).normalize().cross((0, 0, 1)))
     return axes
 
 
