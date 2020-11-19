@@ -1,6 +1,6 @@
 import pygame
 from LinAlg import Vector3
-from PhysicsObjects import Entity
+from PhysicsObjects import Entity, Material
 from World import World
 import random
 from Suntherland import rectangle, boat
@@ -26,24 +26,25 @@ def good_color():
     return a, b, c
 
 
-ground = Entity("ground",
-                points=rect,
+ground = Entity(name="ground0",
+                shape=rect,
                 location=Vector3(490, 700, 0),
-                density=0,
+                material=Material(density=0),
                 rotation=0.5,
                 rvel=0)
 
-wall = Entity("ground",
-              points=rect,
+wall = Entity(name="ground1",
+              shape=rect,
               rotation=1.56,
               location=Vector3(-20, 500, 0),
-              density=0)
+              material=Material(density=0))
 
-wall2 = Entity("ground",
-               points=rect,
+wall2 = Entity(name="ground2",
+               shape=rect,
                rotation=1.56,
                location=Vector3(990, 500, 0),
-               density=0)
+               material=Material(density=0))
+
 
 z = World([ground, wall, wall2])
 running = True
@@ -51,16 +52,17 @@ clock = pygame.time.Clock()
 tick = 0
 
 while running:
-    tick += 1
 
-    if len(z.objects) < 4 and tick % 2 == 0 and tick > 120:
+    if len(z.objects) < 10:
         z.objects.append(
-            Entity("box",
-                   points=square,
-                   location=Vector3(500, 200, 0),
-                   rvel=5,
-                   color=good_color())
+            Entity(
+                name="hi",
+                shape=boat(15, 15, 35),
+                location=Vector3(500, 300, 0),
+                rvel=1.0
+            )
         )
+    tick += 1
     window.fill((25, 25, 25))
     events = pygame.event.get()
     for event in events:

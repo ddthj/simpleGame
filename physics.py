@@ -9,11 +9,12 @@ class Collision:
         self.b = b
         self.axis = axis
         self.gap = gap
+        self.total_impulse = None
         self.manifold = None
 
     def resolve(self):
         # Determine Contact Point
-        self.manifold = suntherland(self.a.points, self.b.points)
+        self.manifold = suntherland(self.a.get_vertices(), self.b.get_vertices())
         contact_point = sum(self.manifold) / len(self.manifold)
 
         # Translate objects apart
@@ -39,17 +40,20 @@ class Collision:
             normal_velocity = relative_velocity.dot(normal)
             tangent_velocity = relative_velocity.dot(tangent)
 
-            friction = math.sqrt(self.a.friction ** 2 + self.b.friction ** 2)
-            restitution = min(self.a.restitution, self.b.restitution) + 1
+            friction = math.sqrt(self.a.material.friction ** 2 + self.b.material.friction ** 2)
+            restitution = min(self.a.material.restitution, self.b.material.restitution) + 1
             normal_impulse = -(restitution * normal_velocity) / inv_total
             tangent_impulse = -(friction * tangent_velocity) / inv_total
 
             total_impulse = (normal * normal_impulse) + (tangent * tangent_impulse)
+            self.total_impulse = total_impulse
 
             self.a.apply_force(-total_impulse)
             self.b.apply_force(total_impulse)
             self.a.apply_torque(-a_perp.dot(total_impulse))
             self.b.apply_torque(b_perp.dot(total_impulse))
+            self.a.on_collide(self)
+            self.b.on_collide(self)
 
 
 def get_axes(points):
@@ -66,12 +70,12 @@ def sat(collision: Collision):
     a = collision.a
     b = collision.b
     # Returns True if two PhysicsObjects are colliding, as well as the min axis and overlap amount
-    axes = get_axes(a.get_points()) + get_axes(b.get_points())
+    axes = get_axes(a.get_vertices()) + get_axes(b.get_vertices())
     min_axis = axes[0]
     min_over = 9999
     for axis in axes:
-        ap = sorted([axis.dot(point) for point in a.points])
-        bp = sorted([axis.dot(point) for point in b.points])
+        ap = sorted([axis.dot(point) for point in a.get_vertices()])
+        bp = sorted([axis.dot(point) for point in b.get_vertices()])
         if ap[0] > bp[-1] or bp[0] > ap[-1]:
             return False
         else:

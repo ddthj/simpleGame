@@ -36,7 +36,7 @@ class QuadTree:
         for node in self.nodes:
             child = False
             node.insert(obj)
-        if child and self.touching(obj.get_center_rect()):
+        if child and self.touching(obj.get_center_rectangle()):
             self.objects.append(obj)
             if len(self.objects) > self.max_objects and self.depth < self.max_depth:
                 self.split()
@@ -70,6 +70,7 @@ class World:
         self.tick_time = 0.0333333333333334
         self.tree = QuadTree(0, (0, 0, 1000, 1000))
         self.objects = objects
+        self.groups = {}
 
     def tick(self):
         self.tree.clear()
@@ -84,7 +85,7 @@ class World:
             for a in node:
                 for b in node:
                     if a != b and a.layer & b.layer and b not in cull_tracker[a]:
-                        if center_rect_collision(a.get_center_rect(), b.get_center_rect()):
+                        if center_rect_collision(a.get_center_rectangle(), b.get_center_rectangle()):
                             potential_collisions.append(Collision(a, b, None, None))
                             cull_tracker[a].append(b)
                             cull_tracker[b].append(a)
