@@ -7,7 +7,7 @@ from Suntherland import rectangle, boat
 
 pygame.init()
 window = pygame.display.set_mode((1600, 1600))
-pygame.display.set_caption("Boats")
+pygame.display.set_caption("Example")
 
 square = boat(15, 15, 22)  # rectangle(15, 15)
 rect = rectangle(500, 50)
