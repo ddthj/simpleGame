@@ -2,8 +2,18 @@ from LinAlg import Vector3
 import pygame
 
 
-def rectangle(x, y):
+def center_rectangle(x, y):
+    x /= 2
+    y /= 2
     return [Vector3(x, y, 0), Vector3(x, -y, 0), Vector3(-x, -y, 0), Vector3(-x, y, 0)]
+
+
+def corner_rectangle(x, y):
+    return [Vector3(0, 0, 0), Vector3(x, 0, 0), Vector3(x, y, 0), Vector3(0, y, 0)]
+
+
+def ramp(x, y):
+    return [Vector3(0, 0, 0), Vector3(x, 0, 0), Vector3(0, y, 0)]
 
 
 def boat(x, y, z):
@@ -53,17 +63,20 @@ def suntherland(subject, scissors):
     v1 = scissors[-1]
 
     for v2 in scissors:
-        input_list = output
-        output = []
-        s = input_list[-1]
+            input_list = output
+            output = []
+            if len(input_list) > 0:
+                s = input_list[-1]
 
-        for vertex in input_list:
-            if inside(vertex):
-                if not inside(s):
-                    output.append(intersection())
-                output.append(vertex)
-            elif inside(s):
-                output.append(intersection())
-            s = vertex
-        v1 = v2
+                for vertex in input_list:
+                    if inside(vertex):
+                        if not inside(s):
+                            output.append(intersection())
+                        output.append(vertex)
+                    elif inside(s):
+                        output.append(intersection())
+                    s = vertex
+                v1 = v2
+            else:
+                break
     return output

@@ -2,6 +2,13 @@ import pygame
 from LinAlg import Vector3, Matrix3
 
 
+class EntityTexture:
+    def __init__(self, surface, **kwargs):
+        self.surface = surface
+        self.location_offset = kwargs.get("location_offset", Vector3(0, 0, 0))
+        self.rotation_offset = kwargs.get("rotation_offset", 0)
+
+
 class Material:
     def __init__(self, **kwargs):
         self.name = kwargs.get("name", "default")
@@ -53,16 +60,6 @@ class HitBox:
                 inertia += (face_mass * (face[0].magnitude() + face[1].magnitude() + face[0].dot(face[1]))) / 6
         return mass, inertia
 
-    def render(self, window):
-        if self.type:
-            pygame.draw.circle(window, self.color, self.vertices[0].render(), self.radius, 1)
-        else:
-            for i in range(len(self.vertices)):
-                if i < len(self.vertices) - 1:
-                    pygame.draw.line(window, self.color, self.vertices[i].render(), self.vertices[i + 1].render(), 2)
-                else:
-                    pygame.draw.line(window, self.color, self.vertices[i].render(), self.vertices[0].render(), 2)
-
 
 class Entity:
     def __init__(self, **kwargs):
@@ -75,21 +72,26 @@ class Entity:
         self.layer = kwargs.get("layer", 1)
 
         self.material = kwargs.get("material", Material())
+        self.texture = kwargs.get("texture", None)
 
         shape = kwargs.get("shape", None)
         self.hitbox = kwargs.get("hitbox", None)
         if self.hitbox is None and shape is not None:
-            self.hitbox = HitBox(shape=shape)
-        self.hitbox.tick(self)
+            self.hitbox = HitBox(shape=shape, color=kwargs.get("color", (125, 125, 125)))
+        if self.hitbox is not None:
+            self.hitbox.tick(self)
 
-        if self.material.density > 0:
+        if self.hitbox is not None and self.material.density > 0:
             self.mass, self.inertia = self.hitbox.determine_mass_inertia(self.material.density)
             self.inv_mass = 1 / self.mass
         else:
             self.mass = self.inv_mass = self.inertia = 0
 
-        self.affected_by_gravity = True
+        self.affected_by_gravity = kwargs.get("affected_by_gravity", True if self.mass > 0 else False)
+        self.affected_by_torque = kwargs.get("affected_by_torque", True if self.mass > 0 else False)
         self.affected_by_forces = True if self.mass > 0 else False
+        self.affects_force = kwargs.get("affects_force", True)
+        self.affects_torque = kwargs.get("affects_torque", True)
         self.collidable = True if self.layer > 0 else False
         self.force = Vector3(0, 0, 0)
         self.torque = 0
@@ -100,6 +102,7 @@ class Entity:
             self.apply_force(world.gravity * self.mass)
         if self.affected_by_forces:
             self.velocity += self.force / self.mass
+        if self.affected_by_torque:
             self.rvel += self.torque / self.inertia
         self.location += self.velocity * time
         self.rotation += self.rvel * time
@@ -119,11 +122,9 @@ class Entity:
     def apply_torque(self, torque):
         self.torque += torque
 
-    def on_collide(self, collision):
+    def on_collide(self, collision, other):
         pass
 
     def on_tick(self, world):
         pass
 
-    def render(self, window):
-        self.hitbox.render(window)

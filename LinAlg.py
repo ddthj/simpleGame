@@ -141,7 +141,7 @@ class Vector3:
 
     def render(self):
         # Returns a list with the x and y values, to be used with pygame
-        return [int(self[0]), int(self[1])]
+        return [int(self[0]), -int(self[1])]
 
     def copy(self):
         # Returns a copy of this Vector3

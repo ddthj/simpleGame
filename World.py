@@ -1,6 +1,5 @@
 from Physics import *
 from LinAlg import Vector3
-from pygame import draw
 
 
 class QuadTree:
@@ -51,26 +50,15 @@ class QuadTree:
             return [self.objects]
         return temp
 
-    def render(self, window):
-        origin = Vector3(self.rect[0], self.rect[1], 0)
-        left = origin + Vector3(self.rect[2], 0, 0)
-        up = origin + Vector3(0, self.rect[3], 0)
-        opposite = origin + Vector3(self.rect[2], self.rect[3], 0)
-        draw.line(window, (200, 100, 200), origin.render(), left.render(), 2)
-        draw.line(window, (200, 100, 200), origin.render(), up.render(), 2)
-        draw.line(window, (200, 100, 200), left.render(), opposite.render(), 2)
-        draw.line(window, (200, 100, 200), up.render(), opposite.render(), 2)
-        for node in self.nodes:
-            node.render(window)
-
 
 class World:
-    def __init__(self, objects):
-        self.gravity = Vector3(0, 10, 0)
+    def __init__(self, rect, background_color, objects):
+        self.gravity = Vector3(0, -10, 0)
         self.tick_time = 0.0333333333333334
-        self.tree = QuadTree(0, (0, 0, 1000, 1000))
+        self.tree = QuadTree(0, rect)
         self.objects = objects
         self.groups = {}
+        self.background_color = background_color
 
     def tick(self):
         self.tree.clear()
@@ -84,7 +72,7 @@ class World:
         for node in self.tree.get_child_nodes():
             for a in node:
                 for b in node:
-                    if a != b and a.layer & b.layer and b not in cull_tracker[a]:
+                    if a != b and a.name != b.name and a.layer & b.layer and b not in cull_tracker[a]:
                         if center_rect_collision(a.get_center_rectangle(), b.get_center_rectangle()):
                             potential_collisions.append(Collision(a, b, None, None))
                             cull_tracker[a].append(b)
@@ -93,8 +81,3 @@ class World:
         for collision in potential_collisions:
             if sat(collision):
                 collision.resolve()
-
-    def render(self, window):
-        self.tree.render(window)
-        for item in self.objects:
-            item.render(window)

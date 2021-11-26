@@ -14,46 +14,48 @@ class Collision:
 
     def resolve(self):
         # Determine Contact Point
-        self.manifold = suntherland(self.a.get_vertices(), self.b.get_vertices())
-        contact_point = sum(self.manifold) / len(self.manifold)
+        if self.a.affects_force and self.b.affects_force:
+            self.manifold = suntherland(self.a.get_vertices(), self.b.get_vertices())
+            if len(self.manifold) > 0:
+                contact_point = sum(self.manifold) / len(self.manifold)
 
-        # Translate objects apart
-        total = self.a.mass + self.b.mass
-        inv_total = self.a.inv_mass + self.b.inv_mass
-        if total > 0:
-            # Translate objects apart
-            self.a.location -= (self.axis * (self.gap * self.a.mass / total))
-            self.b.location += (self.axis * (self.gap * self.b.mass / total))
+                # Translate objects apart
+                total = self.a.mass + self.b.mass
+                inv_total = self.a.inv_mass + self.b.inv_mass
+                if total > 0:
+                    # Translate objects apart
+                    self.a.location -= (self.axis * (self.gap * self.a.mass / total))
+                    self.b.location += (self.axis * (self.gap * self.b.mass / total))
 
-            # Determine direction/distance to contact point and relative velocity at the contact point
-            a_to_contact, a_dist = (contact_point - self.a.location).normalize(True)
-            b_to_contact, b_dist = (contact_point - self.b.location).normalize(True)
-            a_perp = a_to_contact.cross((0, 0, 1))
-            b_perp = b_to_contact.cross((0, 0, 1))
-            a_point_vel = self.a.velocity + (a_perp * a_dist * self.a.rvel)
-            b_point_vel = self.b.velocity + (b_perp * b_dist * self.b.rvel)
-            relative_velocity = b_point_vel - a_point_vel
+                    # Determine direction/distance to contact point and relative velocity at the contact point
+                    a_to_contact, a_dist = (contact_point - self.a.location).normalize(True)
+                    b_to_contact, b_dist = (contact_point - self.b.location).normalize(True)
+                    a_perp = a_to_contact.cross((0, 0, 1))
+                    b_perp = b_to_contact.cross((0, 0, 1))
+                    a_point_vel = self.a.velocity + (a_perp * a_dist * self.a.rvel)
+                    b_point_vel = self.b.velocity + (b_perp * b_dist * self.b.rvel)
+                    relative_velocity = b_point_vel - a_point_vel
 
-            # Calculate normal and tangent components of velocity
-            normal = self.axis
-            tangent = self.axis.cross((0, 0, -1))
-            normal_velocity = relative_velocity.dot(normal)
-            tangent_velocity = relative_velocity.dot(tangent)
+                    # Calculate normal and tangent components of velocity
+                    normal = self.axis
+                    tangent = self.axis.cross((0, 0, -1))
+                    normal_velocity = relative_velocity.dot(normal)
+                    tangent_velocity = relative_velocity.dot(tangent)
 
-            friction = math.sqrt(self.a.material.friction ** 2 + self.b.material.friction ** 2)
-            restitution = min(self.a.material.restitution, self.b.material.restitution) + 1
-            normal_impulse = -(restitution * normal_velocity) / inv_total
-            tangent_impulse = -(friction * tangent_velocity) / inv_total
+                    friction = math.sqrt(self.a.material.friction ** 2 + self.b.material.friction ** 2)
+                    restitution = min(self.a.material.restitution, self.b.material.restitution) + 1
+                    normal_impulse = -(restitution * normal_velocity) / inv_total
+                    tangent_impulse = -(friction * tangent_velocity) / inv_total
 
-            total_impulse = (normal * normal_impulse) + (tangent * tangent_impulse)
-            self.total_impulse = total_impulse
+                    total_impulse = (normal * normal_impulse) + (tangent * tangent_impulse)
+                    self.total_impulse = total_impulse
 
-            self.a.apply_force(-total_impulse)
-            self.b.apply_force(total_impulse)
-            self.a.apply_torque(-a_perp.dot(total_impulse))
-            self.b.apply_torque(b_perp.dot(total_impulse))
-            self.a.on_collide(self)
-            self.b.on_collide(self)
+                    self.a.apply_force(-total_impulse)
+                    self.b.apply_force(total_impulse)
+                    self.a.apply_torque(-a_perp.dot(total_impulse))
+                    self.b.apply_torque(b_perp.dot(total_impulse))
+        self.a.on_collide(self, self.b)
+        self.b.on_collide(self, self.a)
 
 
 def get_axes(points):
