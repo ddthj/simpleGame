@@ -1,15 +1,19 @@
 import math
 
 
-class Vector3:
+class Vector:
     # A Vector3 can be created with:
     # - Anything that has a __getitem__ (lists, tuples, Vector3's, etc)
     # - 3 numbers
     def __init__(self, *args):
-        if hasattr(args[0], "__getitem__"):
+        if len(args) == 0:
+            self.data = [0, 0, 0]
+        elif hasattr(args[0], "__getitem__"):
             self.data = list(args[0])
         elif len(args) == 3:
             self.data = list(args)
+        elif len(args) == 2:
+            self.data = list(args) + [0]
         else:
             raise TypeError("Vector3 unable to accept %s" % args)
 
@@ -47,6 +51,9 @@ class Vector3:
     def __setitem__(self, key, value):
         self.data[key] = value
 
+    def __len__(self):
+        return len(self.data)
+
     def __str__(self):
         # Vector3's can be printed to console
         return str(self.data)
@@ -58,7 +65,7 @@ class Vector3:
         # - Another Vector3, in which case True will be returned if they have the same values
         # - A list, in which case True will be returned if they have the same values
         # - A single value, in which case True will be returned if the Vector's length matches the value
-        if isinstance(value, Vector3):
+        if isinstance(value, Vector):
             return self.data == value.data
         elif isinstance(value, list):
             return self.data == value
@@ -72,40 +79,40 @@ class Vector3:
     # ie x+v, y+v, z+v
     def __add__(self, value):
         if hasattr(value, "__getitem__"):
-            return Vector3(self[0] + value[0], self[1] + value[1], self[2] + value[2])
-        return Vector3(self[0] + value, self[1] + value, self[2] + value)
+            return Vector(self[0] + value[0], self[1] + value[1], self[2] + value[2])
+        return Vector(self[0] + value, self[1] + value, self[2] + value)
 
     __radd__ = __add__
 
     def __sub__(self, value):
         if hasattr(value, "__getitem__"):
-            return Vector3(self[0] - value[0], self[1] - value[1], self[2] - value[2])
-        return Vector3(self[0] - value, self[1] - value, self[2] - value)
+            return Vector(self[0] - value[0], self[1] - value[1], self[2] - value[2])
+        return Vector(self[0] - value, self[1] - value, self[2] - value)
 
     __rsub__ = __sub__
 
     def __neg__(self):
-        return Vector3(-self[0], -self[1], -self[2])
+        return Vector(-self[0], -self[1], -self[2])
 
     def __mul__(self, value):
         if hasattr(value, "__getitem__"):
-            return Vector3(self[0] * value[0], self[1] * value[1], self[2] * value[2])
-        return Vector3(self[0] * value, self[1] * value, self[2] * value)
+            return Vector(self[0] * value[0], self[1] * value[1], self[2] * value[2])
+        return Vector(self[0] * value, self[1] * value, self[2] * value)
 
     __rmul__ = __mul__
 
     def __truediv__(self, value):
         if hasattr(value, "__getitem__"):
-            return Vector3(self[0] / value[0], self[1] / value[1], self[2] / value[2])
-        return Vector3(self[0] / value, self[1] / value, self[2] / value)
+            return Vector(self[0] / value[0], self[1] / value[1], self[2] / value[2])
+        return Vector(self[0] / value, self[1] / value, self[2] / value)
 
     def __rtruediv__(self, value):
         if hasattr(value, "__getitem__"):
-            return Vector3(value[0] / self[0], value[1] / self[1], value[2] / self[2])
+            return Vector(value[0] / self[0], value[1] / self[1], value[2] / self[2])
         raise TypeError("unsupported rtruediv operands")
 
     def __abs__(self):
-        return Vector3(abs(self[0]), abs(self[1]), abs(self[2]))
+        return Vector(abs(self[0]), abs(self[1]), abs(self[2]))
 
     def magnitude(self):
         # Magnitude() returns the length of the vector
@@ -117,25 +124,25 @@ class Vector3:
         magnitude = self.magnitude()
         if magnitude != 0:
             if return_magnitude:
-                return Vector3(self[0] / magnitude, self[1] / magnitude, self[2] / magnitude), magnitude
-            return Vector3(self[0] / magnitude, self[1] / magnitude, self[2] / magnitude)
+                return Vector(self[0] / magnitude, self[1] / magnitude, self[2] / magnitude), magnitude
+            return Vector(self[0] / magnitude, self[1] / magnitude, self[2] / magnitude)
         if return_magnitude:
-            return Vector3(0, 0, 0), 0
-        return Vector3(0, 0, 0)
+            return Vector(0, 0, 0), 0
+        return Vector(0, 0, 0)
 
     # Linear algebra functions
     def dot(self, value):
         return self[0] * value[0] + self[1] * value[1] + self[2] * value[2]
 
     def cross(self, value):
-        return Vector3((self[1] * value[2]) - (self[2] * value[1]),
-                       (self[2] * value[0]) - (self[0] * value[2]),
-                       (self[0] * value[1]) - (self[1] * value[0]))
+        return Vector((self[1] * value[2]) - (self[2] * value[1]),
+                      (self[2] * value[0]) - (self[0] * value[2]),
+                      (self[0] * value[1]) - (self[1] * value[0]))
 
     def flatten(self, axis=None):
         # Sets Z (Vector3[2]) to 0, or flattens point to some plane orthogonal to the provided axis
         if axis is None:
-            return Vector3(self[0], self[1], 0)
+            return Vector(self[0], self[1], 0)
         else:
             return self - (axis * self.dot(axis))
 
@@ -145,7 +152,7 @@ class Vector3:
 
     def copy(self):
         # Returns a copy of this Vector3
-        return Vector3(self.data[:])
+        return Vector(self.data[:])
 
     def angle(self, value):
         # Returns the angle between this Vector3 and another Vector3
@@ -154,8 +161,8 @@ class Vector3:
     def rotate(self, angle):
         # Rotates this Vector3 by the given angle in radians
         # Note that this is only 2D, in the x and y axis
-        return Vector3((math.cos(angle) * self[0]) - (math.sin(angle) * self[1]),
-                       (math.sin(angle) * self[0]) + (math.cos(angle) * self[1]), self[2])
+        return Vector((math.cos(angle) * self[0]) - (math.sin(angle) * self[1]),
+                      (math.sin(angle) * self[0]) + (math.cos(angle) * self[1]), self[2])
 
     def clamp(self, start, end):
         # Similar to integer clamping, Vector3's clamp() forces the Vector3's direction between a start and end Vector3
@@ -172,7 +179,6 @@ class Vector3:
 
 
 class Matrix3:
-
     def __init__(self, *args):
         if len(args) == 1:
             self.data = ()
@@ -180,7 +186,7 @@ class Matrix3:
         elif len(args) > 0:
             self.data = (args[0], args[1], args[2])
         else:
-            self.data = (Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0))
+            self.data = (Vector(0, 0, 0), Vector(0, 0, 0), Vector(0, 0, 0))
         self.forward, self.left, self.up = self.data
 
     def convert_euler(self, pitch, yaw, roll):
@@ -191,41 +197,41 @@ class Matrix3:
         cr = math.cos(roll)
         sr = math.sin(roll)
         self.data = (
-            Vector3(cp * cy, cp * sy, sp),
-            Vector3(cy * sp * sr - cr * sy, sy * sp * sr + cr * cy, -cp * sr),
-            Vector3(-cr * cy * sp - sr * sy, -cr * sy * sp + sr * cy, cp * cr))
+            Vector(cp * cy, cp * sy, sp),
+            Vector(cy * sp * sr - cr * sy, sy * sp * sr + cr * cy, -cp * sr),
+            Vector(-cr * cy * sp - sr * sy, -cr * sy * sp + sr * cy, cp * cr))
         self.forward, self.left, self.up = self.data
 
     def dot(self, vector):
-        return Vector3(self.forward.dot(vector),
-                       self.left.dot(vector),
-                       self.up.dot(vector))
+        return Vector(self.forward.dot(vector),
+                      self.left.dot(vector),
+                      self.up.dot(vector))
 
     def transpose(self):
         return Matrix3(
-            Vector3(self[0][0], self[1][0], self[2][0]),
-            Vector3(self[0][1], self[1][1], self[2][1]),
-            Vector3(self[0][2], self[1][2], self[2][2]))
+            Vector(self[0][0], self[1][0], self[2][0]),
+            Vector(self[0][1], self[1][1], self[2][1]),
+            Vector(self[0][2], self[1][2], self[2][2]))
 
     def axis_angle(self):
         theta = math.acos((self[0][0] + self[1][1] + self[2][2] - 1.0) / 2)
         x = (self[2][1] - self[1][2]) / (2 * math.sin(theta))
         y = (self[0][2] - self[2][0]) / (2 * math.sin(theta))
         z = (self[1][0] - self[0][1]) / (2 * math.sin(theta))
-        return Vector3(x, y, z)
+        return Vector(x, y, z)
 
     def __getitem__(self, value):
         return self.data[value]
 
     def __mul__(self, mat):
         return Matrix3(
-            Vector3(self[0][0] * mat[0][0] + self[1][0] * mat[0][1] + self[2][0] * mat[0][2],
-                    self[0][1] * mat[0][0] + self[1][1] * mat[0][1] + self[2][1] * mat[0][2],
-                    self[0][2] * mat[0][0] + self[1][2] * mat[0][1] + self[2][2] * mat[0][2]),
-            Vector3(self[0][0] * mat[1][0] + self[1][0] * mat[1][1] + self[2][0] * mat[1][2],
-                    self[0][1] * mat[1][0] + self[1][1] * mat[1][1] + self[2][1] * mat[1][2],
-                    self[0][2] * mat[1][0] + self[1][2] * mat[1][1] + self[2][2] * mat[1][2]),
-            Vector3(self[0][0] * mat[2][0] + self[1][0] * mat[2][1] + self[2][0] * mat[2][2],
-                    self[0][1] * mat[2][0] + self[1][1] * mat[2][1] + self[2][1] * mat[2][2],
-                    self[0][2] * mat[2][0] + self[1][2] * mat[2][1] + self[2][2] * mat[2][2]),
+            Vector(self[0][0] * mat[0][0] + self[1][0] * mat[0][1] + self[2][0] * mat[0][2],
+                   self[0][1] * mat[0][0] + self[1][1] * mat[0][1] + self[2][1] * mat[0][2],
+                   self[0][2] * mat[0][0] + self[1][2] * mat[0][1] + self[2][2] * mat[0][2]),
+            Vector(self[0][0] * mat[1][0] + self[1][0] * mat[1][1] + self[2][0] * mat[1][2],
+                   self[0][1] * mat[1][0] + self[1][1] * mat[1][1] + self[2][1] * mat[1][2],
+                   self[0][2] * mat[1][0] + self[1][2] * mat[1][1] + self[2][2] * mat[1][2]),
+            Vector(self[0][0] * mat[2][0] + self[1][0] * mat[2][1] + self[2][0] * mat[2][2],
+                   self[0][1] * mat[2][0] + self[1][1] * mat[2][1] + self[2][1] * mat[2][2],
+                   self[0][2] * mat[2][0] + self[1][2] * mat[2][1] + self[2][2] * mat[2][2]),
         )

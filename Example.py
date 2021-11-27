@@ -1,18 +1,10 @@
-from math import pi
 import pygame
 from Camera import Camera
-from LinAlg import Vector3
-from PhysicsObjects import Entity, Material
+from LinAlg import Vector
+from Entity import Entity
 from World import World
 import random
-from Suntherland import center_rectangle as rectangle, boat
-
-pygame.init()
-window = pygame.display.set_mode((1000, 800))
-pygame.display.set_caption("Example")
-
-square = boat(15, 15, 22)
-rect = rectangle(500, 50)
+from Shapes import center_rectangle as rect
 
 
 def good_color():
@@ -28,54 +20,52 @@ def good_color():
     return a, b, c
 
 
-ground = Entity(name="ground0",
-                shape=rect,
-                location=Vector3(0, 0, 0),
-                material=Material(density=0, restitution=0.9),
-                rotation=1.0,
-                rvel=-0.1)
+class GUID:
+    def __init__(self):
+        self.id = 0
 
-wall = Entity(name="ground1",
-              shape=rect,
-              rotation=pi/2,
-              location=Vector3(-250, 0, 0),
-              material=Material(density=0))
-
-wall2 = Entity(name="ground2",
-               shape=rect,
-               rotation=pi/2,
-               location=Vector3(250, 0, 0),
-               material=Material(density=0))
+    def get(self):
+        self.id += 1
+        return self.id
 
 
-y = Camera(True)
-z = World((-2000, -2000, 4000, 4000), (200, 200, 200), [ground, wall, wall2])
-running = True
+class MagicBox(Entity):
+    def on_tick(self, world):
+        if self.loc.y < -500:
+            self.loc.y = 500
+            if len(world.entities) < 100:
+                world.entities.append(MagicBox(g.get(), shape=rect(25, 25), loc=Vector(0, 400), color=good_color()))
+
+
+
+pygame.init()
+window = pygame.display.set_mode((1000, 800))
+pygame.display.set_caption("Example")
 clock = pygame.time.Clock()
-tick = 0
 
+g = GUID()
+
+ground = Entity(g.get(), shape=rect(500, 50), loc=Vector(0, 0), density=0, rot_vel=0.1)
+wall1 = Entity(g.get(), shape=rect(50, 500), loc=Vector(-250, 0), density=0)
+wall2 = Entity(g.get(), shape=rect(50, 500), loc=Vector(250, 0), density=0)
+box = MagicBox(g.get(), shape=rect(25, 25), loc=Vector(0, 400), color=good_color())
+
+camera = Camera(True)
+world = World((-750, -750, 1500, 1500), (200, 200, 200), [ground, wall1, wall2, box])
+
+running = True
 while running:
-
-    if len(z.objects) < 10 and tick > 200:
-        z.objects.append(
-            Entity(
-                name="hi",
-                shape=boat(15, 15, 35),
-                location=Vector3(0, 300, 0),
-                rvel=1.0,
-                color=good_color(),
-                material=Material(restitution=0.9)
-            )
-        )
-    tick += 1
     window.fill((25, 25, 25))
     events = pygame.event.get()
     for event in events:
         if event.type == pygame.QUIT:
             running = False
-    z.tick()
-    for item in z.objects:
-        y.render(window, item)
-    pygame.display.update()
 
+    world.tick()
+    for item in world.entities:
+        camera.render(window, item)
+        # camera.render_aabb(window, item.aabb)
+    # camera.render_quadtree(window, world.tree)
+
+    pygame.display.update()
     clock.tick(60)

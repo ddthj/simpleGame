@@ -1,23 +1,5 @@
-from LinAlg import Vector3
+from LinAlg import Vector
 import pygame
-
-
-def center_rectangle(x, y):
-    x /= 2
-    y /= 2
-    return [Vector3(x, y, 0), Vector3(x, -y, 0), Vector3(-x, -y, 0), Vector3(-x, y, 0)]
-
-
-def corner_rectangle(x, y):
-    return [Vector3(0, 0, 0), Vector3(x, 0, 0), Vector3(x, y, 0), Vector3(0, y, 0)]
-
-
-def ramp(x, y):
-    return [Vector3(0, 0, 0), Vector3(x, 0, 0), Vector3(0, y, 0)]
-
-
-def boat(x, y, z):
-    return [Vector3(0, z, 0), Vector3(x, y, 0), Vector3(x, -y, 0), Vector3(-x, -y, 0), Vector3(-x, y, 0)]
 
 
 def render_polygon(poly, color, window, loop=True):
@@ -57,7 +39,7 @@ def suntherland(subject, scissors):
         n1 = v1[0] * v2[1] - v1[1] * v2[0]
         n2 = s[0] * vertex[1] - s[1] * vertex[0]
         n3 = 1.0 / (dc[0] * dp[1] - dc[1] * dp[0])
-        return Vector3((n1 * dp[0] - n2 * dc[0]) * n3, (n1 * dp[1] - n2 * dc[1]) * n3, 0)
+        return Vector((n1 * dp[0] - n2 * dc[0]) * n3, (n1 * dp[1] - n2 * dc[1]) * n3, 0)
 
     output = subject
     v1 = scissors[-1]
