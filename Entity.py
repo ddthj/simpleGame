@@ -17,7 +17,8 @@ def find_mass_inertia(entity):
             face_mass = entity.density * 0.5 * abs(face[0].cross(face[1])[2])
             mass += face_mass
             inertia += face_mass * (face[0].magnitude() + face[1].magnitude() + face[0].dot(face[1])) / 6
-    return mass, inertia * 2
+    print(mass, inertia)
+    return mass, inertia
 
 
 # Entities are for anything that exist within the World.
@@ -26,9 +27,9 @@ class Entity:
         self.id = id
         self.name = kwargs.get("name", "")
 
-        self.density = kwargs.get("density", 0.5)
-        self.friction = kwargs.get("friction", 0.1)
-        self.restitution = kwargs.get("restitution", 0.1)
+        self.density = kwargs.get("density", 1)
+        self.friction = kwargs.get("friction", 0.01)
+        self.restitution = kwargs.get("restitution", 0.01)
 
         self.texture = kwargs.get("texture", None)
         self.texture_loc = kwargs.get("texture_loc", Vector(0, 0))
