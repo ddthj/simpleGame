@@ -36,13 +36,12 @@ ground = Entity(5, shape=rect(500, 20), loc=Vector(0, 0), density=0.0)
 
 # Create a world, and a camera to view the world
 world = World((-750, -750, 1500, 1500), (200, 200, 200), [box, box2, box3, box4, ground])
-world.gravity = Vector(0, 0)
+world.gravity = Vector(0, -10)
 camera = Camera(True)
 
 # Prepare the main loop
 clock = pygame.time.Clock()
 running = True
-unpaused = True
 while running:
     # Lock the framerate to 60fps for simplicity
     clock.tick(60)
@@ -55,16 +54,14 @@ while running:
         elif event.type == pygame.MOUSEBUTTONDOWN:
             unpaused = True
 
-    # update the world
-    if True: # unpaused:
-        world.tick()
+    world.tick()
 
     # render each entity
     window.fill((25, 25, 25))
     for item in world.entities:
         # by updating the hitbox of each item we get to see the post-collision view. Otherwise some objects may
         # appear to still be intersecting with each other
-        # item.update_hitbox()
+        item.update_hitbox()
         camera.render(window, item)
         for c in item.collisions:
             unpaused = False

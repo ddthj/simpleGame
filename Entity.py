@@ -27,9 +27,9 @@ class Entity:
         self.id = id
         self.name = kwargs.get("name", "")
 
-        self.density = kwargs.get("density", 1)
-        self.friction = kwargs.get("friction", 0.01)
-        self.restitution = kwargs.get("restitution", 0.01)
+        self.density = kwargs.get("density", 0.5)
+        self.friction = kwargs.get("friction", 0.05)
+        self.restitution = kwargs.get("restitution", 0.005)
 
         self.texture = kwargs.get("texture", None)
         self.texture_loc = kwargs.get("texture_loc", Vector(0, 0))
