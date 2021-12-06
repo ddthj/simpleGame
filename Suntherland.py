@@ -45,20 +45,20 @@ def suntherland(subject, scissors):
     v1 = scissors[-1]
 
     for v2 in scissors:
-            input_list = output
-            output = []
-            if len(input_list) > 0:
-                s = input_list[-1]
+        input_list = output
+        output = []
+        if len(input_list) > 0:
+            s = input_list[-1]
 
-                for vertex in input_list:
-                    if inside(vertex):
-                        if not inside(s):
-                            output.append(intersection())
-                        output.append(vertex)
-                    elif inside(s):
+            for vertex in input_list:
+                if inside(vertex):
+                    if not inside(s):
                         output.append(intersection())
-                    s = vertex
-                v1 = v2
-            else:
-                break
+                    output.append(vertex)
+                elif inside(s):
+                    output.append(intersection())
+                s = vertex
+            v1 = v2
+        else:
+            break
     return output

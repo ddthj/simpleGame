@@ -1,4 +1,5 @@
 from Entity import Entity
+from LinAlg import cross, Vector
 from Suntherland import suntherland
 
 
@@ -9,50 +10,39 @@ class Collision:
         self.axis = axis
         self.gap = gap
 
-        self.total_impulse = None
-        self.manifold = None
-        self.contact_point = None
+        self.relative = Vector(0, 0)
 
-    def resolve(self):
-        # Determine Contact Point
+        self.total_impulse = None
+        self.normal = Vector(0, 0)
+        self.tangent = Vector(0, 0)
         self.manifold = suntherland(self.a.vertices, self.b.vertices)
         if len(self.manifold) > 0:
             self.contact_point = sum(self.manifold) / len(self.manifold)
 
-            # Translate objects apart
-            total = 1 / (self.a.mass + self.b.mass)
-            # Translate objects apart
-            self.a.loc -= (self.axis * (self.gap * self.a.mass * total))
-            self.b.loc += (self.axis * (self.gap * self.b.mass * total))
+    def resolve(self):
+        a = self.a
+        b = self.b
+        p = self.contact_point
 
-            # Determine direction/distance to contact point and relative velocity at the contact point
-            a_to_contact, a_dist = (self.contact_point - self.a.loc).normalize(True)
-            b_to_contact, b_dist = (self.contact_point - self.b.loc).normalize(True)
-            a_perp = a_to_contact.cross((0, 0, 1))
-            b_perp = b_to_contact.cross((0, 0, 1))
-            a_point_vel = self.a.vel + (a_perp * a_dist * self.a.rot_vel)
-            b_point_vel = self.b.vel + (b_perp * b_dist * self.b.rot_vel)
-            relative_velocity = b_point_vel - a_point_vel
+        # Translate objects apart
+        inv_total = a.mass_inv + b.mass_inv
+        a.loc += (-self.axis * (self.gap * a.mass * inv_total))
+        b.loc += (self.axis * (self.gap * b.mass * inv_total))
 
-            # Calculate normal and tangent components of velocity
-            normal = self.axis
-            tangent = self.axis.cross((0, 0, -1))
-            normal_velocity = relative_velocity.dot(normal)
-            tangent_velocity = relative_velocity.dot(tangent)
+        relative_v = a.vel - b.vel + cross(a.rot_vel * (p - a.loc) - b.rot_vel * (p - b.loc))
 
-            friction = self.a.friction + self.b.friction / 2
-            restitution = self.a.restitution + self.b.restitution / 2
-            normal_impulse = -(restitution * normal_velocity) / total
-            tangent_impulse = -(friction * tangent_velocity) / total
+        e = (a.restitution + b.restitution) / 2
+        j = ((-(1 + e) * relative_v).dot(self.axis)) / (self.axis.dot(self.axis * inv_total) + ((cross(p - a.loc).dot(self.axis))**2 / a.inertia) + ((cross(p - b.loc).dot(self.axis))**2 * b.inertia))
 
-            total_impulse = (normal * normal_impulse) + (tangent * tangent_impulse)
-            self.total_impulse = total_impulse
+        jn = j * self.axis
+        a.force += jn
+        b.force += -jn
+        a.torque += cross(p - a.loc).dot(-jn) * a.inertia_inv
+        b.torque += cross(p - b.loc).dot(jn) * b.inertia_inv
 
-            self.a.force -= total_impulse
-            self.b.force += total_impulse
-            self.a.torque -= a_perp.dot(total_impulse)
-            self.b.torque += b_perp.dot(total_impulse)
-        # todo - call on_collide functions
+        a.on_collide(self)
+        b.on_collide(self)
+        self.total_impulse = jn.copy()
 
 
 def get_axes(points):
@@ -68,14 +58,13 @@ def get_axes(points):
 def sat(collision: Collision):
     a = collision.a
     b = collision.b
-    # Returns True if two PhysicsObjects are colliding, as well as the min axis and overlap amount
     axes = get_axes(a.vertices) + get_axes(b.vertices)
     min_axis = axes[0]
     min_over = 9999
     for axis in axes:
         ap = sorted([axis.dot(point) for point in a.vertices])
         bp = sorted([axis.dot(point) for point in b.vertices])
-        if ap[0] > bp[-1] or bp[0] > ap[-1]:
+        if ap[0] >= bp[-1] or bp[0] >= ap[-1]:
             return False
         else:
             a_over = ap[-1] - bp[0]

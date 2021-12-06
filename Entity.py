@@ -14,9 +14,9 @@ def find_mass_inertia(entity):
     else:
         for i in range(len(entity.shape)):
             face = (entity.shape[i - 1], entity.shape[i])
-            face_mass = entity.density + 0.5 * abs(face[0].cross(face[1])[2])
+            face_mass = entity.density * 0.5 * abs(face[0].cross(face[1])[2])
             mass += face_mass
-            inertia += (face_mass * (face[0].magnitude() + face[1].magnitude() + face[0].dot(face[1]))) / 6
+            inertia += face_mass * (face[0].magnitude() + face[1].magnitude() + face[0].dot(face[1])) / 6
     return mass, inertia
 
 
@@ -27,18 +27,18 @@ class Entity:
         self.name = kwargs.get("name", "")
 
         self.density = kwargs.get("density", 0.5)
-        self.friction = kwargs.get("friction", 0.1)
-        self.restitution = kwargs.get("restitution", 0.1)
+        self.friction = kwargs.get("friction", 0.5)
+        self.restitution = kwargs.get("restitution", 1.0)
 
         self.texture = kwargs.get("texture", None)
-        self.texture_loc = kwargs.get("texture_loc", Vector())
+        self.texture_loc = kwargs.get("texture_loc", Vector(0, 0))
         self.texture_rot = kwargs.get("texture_rot", 0)
 
         self.shape = kwargs.get("shape", circle(10))
         self.color = kwargs.get("color", (255, 255, 255))
 
-        self.loc = kwargs.get("loc", Vector())
-        self.vel = kwargs.get("vel", Vector())
+        self.loc = kwargs.get("loc", Vector(0, 0))
+        self.vel = kwargs.get("vel", Vector(0, 0))
         self.rot = kwargs.get("rot", 0)
         self.rot_vel = kwargs.get("rot_vel", 0)
 
@@ -49,14 +49,14 @@ class Entity:
         self.update_hitbox()
         self.radius = None if len(self.vertices) > 1 else self.vertices[0].z
         self.mass, self.inertia = find_mass_inertia(self)
-        self.inv_mass = 1 / self.mass if self.mass > 0 else 0
-        self.inv_inertia = 1 / self.inertia if self.inertia > 0 else 0
-
+        self.mass_inv = 0 if self.mass == 0.0 else 1 / self.mass
+        self.inertia_inv = 0 if self.inertia == 0.0 else 1 / self.inertia
         self.affected_by_gravity = kwargs.get("affected_by_gravity", True if self.density > 0 else False)
         self.affected_by_torque = kwargs.get("affected_by_torque", True if self.density > 0 else False)
         self.affected_by_forces = True if self.density > 0 else False
 
-        self.force = Vector()
+        self.force = Vector(0, 0)
+        self.collisions = []
         self.torque = 0
 
     def update_hitbox(self):
@@ -70,23 +70,20 @@ class Entity:
             radius = self.vertices[0].z
             self.aabb = [self.loc.x - radius, self.loc.x + radius, self.loc.y - radius, self.loc.y + radius]
 
-    def update(self, world):
-        if self.affected_by_gravity:
-            self.force += world.gravity * self.mass
-        self.vel += self.force * self.inv_mass
-        self.rot_vel += self.torque * self.inv_inertia
+    def update_physics(self, world):
+        if self.density > 0.0:
+            self.vel += world.gravity + (self.force * self.mass_inv)
+            self.rot_vel += self.torque * self.inertia_inv
         self.loc += self.vel * world.tick_time
         self.rot += self.rot_vel * world.tick_time
         self.update_hitbox()
 
-        self.on_tick(world)
+        self.collisions = []
+        self.force = Vector(0.0, 0.0)
+        self.torque = 0.0
 
-        self.force = Vector(0, 0, 0)
-        self.torque = 0
-
-    def on_tick(self, world):
-        pass
+    def tick(self, world):
+        self.update_physics(world)
 
     def on_collide(self, collision):
-        pass
-
+        self.collisions.append(collision)

@@ -39,6 +39,11 @@ class Camera:
                 start = (entity.vertices[i - 1] - self.location) * self.zoom + offset
                 end = (entity.vertices[i] - self.location) * self.zoom + offset
                 draw.line(window, entity.color, start.render(), end.render(), 2)
+            if entity.mass > 0:
+                for c in entity.collisions:
+                    start = (c.contact_point - self.location) * self.zoom + offset
+                    end = (c.contact_point + (c.total_impulse.normalize() * 100) - self.location) * self.zoom + offset
+                    draw.line(window, entity.color, start.render(), end.render(), 2)
 
     def render_aabb(self, window, a):
         offset = Vector(*window.get_size(), 0) * Vector(0.5, -0.5, 0)
@@ -55,3 +60,18 @@ class Camera:
         self.render_aabb(window, tree.aabb)
         for node in tree.nodes:
             self.render_quadtree(window, node)
+
+    def render_circle(self, window, loc, radius):
+        offset = Vector(*window.get_size(), 0) * Vector(0.5, -0.5, 0)
+        loc = loc * self.zoom + offset
+        draw.circle(window, (255, 255, 255), loc.render(), radius)
+
+    def render_line(self, window, start, end, color = None):
+        offset = Vector(*window.get_size(), 0) * Vector(0.5, -0.5, 0)
+        start = start * self.zoom + offset
+        end = end * self.zoom + offset
+        draw.line(window, (255, 255, 255) if color is None else color, start.render(), end.render(), 2)
+
+    def mouse_to_world(self, window, mouse):
+        offset = Vector(*window.get_size(), 0) * Vector(0.5, -0.5, 0)
+        return mouse * Vector(1, -1) - offset

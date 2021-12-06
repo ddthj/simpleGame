@@ -1,21 +1,10 @@
 import math
+from typing import List
 
 
 class Vector:
-    # A Vector3 can be created with:
-    # - Anything that has a __getitem__ (lists, tuples, Vector3's, etc)
-    # - 3 numbers
-    def __init__(self, *args):
-        if len(args) == 0:
-            self.data = [0, 0, 0]
-        elif hasattr(args[0], "__getitem__"):
-            self.data = list(args[0])
-        elif len(args) == 3:
-            self.data = list(args)
-        elif len(args) == 2:
-            self.data = list(args) + [0]
-        else:
-            raise TypeError("Vector3 unable to accept %s" % args)
+    def __init__(self, x, y, z=0.0):
+        self.data: List[float] = [x, y, z]
 
     # Property functions allow you to use `Vector3.x` vs `Vector3[0]`
     @property
@@ -50,9 +39,6 @@ class Vector:
 
     def __setitem__(self, key, value):
         self.data[key] = value
-
-    def __len__(self):
-        return len(self.data)
 
     def __str__(self):
         # Vector3's can be printed to console
@@ -152,7 +138,7 @@ class Vector:
 
     def copy(self):
         # Returns a copy of this Vector3
-        return Vector(self.data[:])
+        return Vector(*self.data[:])
 
     def angle(self, value):
         # Returns the angle between this Vector3 and another Vector3
@@ -235,3 +221,7 @@ class Matrix3:
                    self[0][1] * mat[2][0] + self[1][1] * mat[2][1] + self[2][1] * mat[2][2],
                    self[0][2] * mat[2][0] + self[1][2] * mat[2][1] + self[2][2] * mat[2][2]),
         )
+
+
+def cross(x: Vector):
+    return Vector(-x.y, x.x)
