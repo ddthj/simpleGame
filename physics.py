@@ -1,5 +1,7 @@
+import math
+
 from Entity import Entity
-from LinAlg import cross, Vector
+from LinAlg import Vector, cross
 from Suntherland import suntherland
 
 
@@ -20,6 +22,44 @@ class Collision:
             self.contact_point = sum(self.manifold) / len(self.manifold)
 
     def resolve(self):
+
+        total = self.a.mass + self.b.mass
+        inv_total = self.a.mass_inv + self.b.mass_inv
+        # Translate objects apart
+        self.a.loc -= (self.axis * (self.gap * self.a.mass / total))
+        self.b.loc += (self.axis * (self.gap * self.b.mass / total))
+
+        # Determine direction/distance to contact point and relative velocity at the contact point
+        a_to_contact, a_dist = (self.contact_point - self.a.loc).normalize(True)
+        b_to_contact, b_dist = (self.contact_point - self.b.loc).normalize(True)
+        a_perp = a_to_contact.cross((0, 0, 1))
+        b_perp = b_to_contact.cross((0, 0, 1))
+        a_point_vel = self.a.vel + (a_perp * a_dist * self.a.rot_vel)
+        b_point_vel = self.b.vel + (b_perp * b_dist * self.b.rot_vel)
+        relative_velocity = b_point_vel - a_point_vel
+
+        # Calculate normal and tangent components of velocity
+        normal = self.axis
+        tangent = self.axis.cross((0, 0, -1))
+        normal_velocity = relative_velocity.dot(normal)
+        tangent_velocity = relative_velocity.dot(tangent)
+
+        friction = self.a.friction + self.b.friction / 2
+        restitution = (self.a.restitution + self.b.restitution) / 2
+        normal_impulse = -((1 + restitution) * normal_velocity) / inv_total
+        tangent_impulse = -(friction * tangent_velocity) / inv_total
+
+        total_impulse = (normal * normal_impulse) + (tangent * tangent_impulse)
+        self.total_impulse = total_impulse
+
+        self.a.force += -total_impulse
+        self.b.force += total_impulse
+        self.a.torque += -a_perp.dot(total_impulse)
+        self.b.torque += b_perp.dot(total_impulse)
+        self.a.on_collide(self)
+        self.b.on_collide(self)
+
+        """
         a = self.a
         b = self.b
         p = self.contact_point
@@ -38,12 +78,15 @@ class Collision:
         a.force += jn
         b.force += -jn
         a.torque += cross(p - a.loc).dot(-jn) * a.inertia_inv
-        b.torque += cross(p - b.loc).dot(jn) * b.inertia_inv
+        b.torque += -cross(p - b.loc).dot(jn) * b.inertia_inv
         print(a.vel)
 
         a.on_collide(self)
         b.on_collide(self)
         self.total_impulse = jn.copy()
+        """
+
+
 
 
 def get_axes(points):

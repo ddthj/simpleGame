@@ -26,8 +26,8 @@ pygame.init()
 window = pygame.display.set_mode((1000, 800))
 pygame.display.set_caption("Example")
 
-box = Entity(1, shape=rect(50, 100), loc=Vector(200, 100), color=good_color(), vel=Vector(0, 0), rot=0.2)
-box2 = Entity(2, shape=rect(50, 100), loc=Vector(50, 175), color=good_color(), vel=Vector(-50, 0), rot_vel=1.5)
+box = Entity(1, shape=rect(50, 100), loc=Vector(200, 150), color=good_color(), vel=Vector(-50, 0), rot=0.2)
+box2 = Entity(2, shape=rect(50, 100), loc=Vector(50, 175), color=good_color(), vel=Vector(50, 0), rot_vel=1.5)
 
 box3 = Entity(3, shape=rect(50, 100), loc=Vector(-50, -100), color=good_color(), vel=Vector(50, 0), rot_vel=-1.5)
 box4 = Entity(4, shape=rect(50, 100), loc=Vector(50, -175), color=good_color(), vel=Vector(-50, 0), rot_vel=-1.5)
@@ -35,8 +35,8 @@ box4 = Entity(4, shape=rect(50, 100), loc=Vector(50, -175), color=good_color(), 
 ground = Entity(5, shape=rect(500, 20), loc=Vector(0, 0), density=0.0)
 
 # Create a world, and a camera to view the world
-world = World((-750, -750, 1500, 1500), (200, 200, 200), [box, ground])
-world.gravity = Vector(0, -10)
+world = World((-750, -750, 1500, 1500), (200, 200, 200), [box, box2, box3, box4, ground])
+world.gravity = Vector(0, 0)
 camera = Camera(True)
 
 # Prepare the main loop
