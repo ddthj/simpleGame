@@ -32,13 +32,14 @@ class Collision:
         relative_v = a.vel - b.vel + cross(a.rot_vel * (p - a.loc) - b.rot_vel * (p - b.loc))
 
         e = (a.restitution + b.restitution) / 2
-        j = ((-(1 + e) * relative_v).dot(self.axis)) / (self.axis.dot(self.axis * inv_total) + ((cross(p - a.loc).dot(self.axis))**2 / a.inertia) + ((cross(p - b.loc).dot(self.axis))**2 * b.inertia))
+        j = ((-(1 + e) * relative_v).dot(self.axis)) / (self.axis.dot(self.axis * inv_total) )#+ ((cross(p - a.loc).dot(self.axis))**2 / a.inertia) + ((cross(p - b.loc).dot(self.axis))**2 * b.inertia))
 
         jn = j * self.axis
         a.force += jn
         b.force += -jn
         a.torque += cross(p - a.loc).dot(-jn) * a.inertia_inv
         b.torque += cross(p - b.loc).dot(jn) * b.inertia_inv
+        print(a.vel)
 
         a.on_collide(self)
         b.on_collide(self)
