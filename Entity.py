@@ -1,23 +1,18 @@
-from LinAlg import Vector, Matrix3
+from LinAlg import Vector, Matrix3, det
 from Shapes import circle
-from math import pi
 
 
 def find_mass_inertia(entity):
-    mass = inertia = 0
-    if entity.density == 0:
-        return 0, 0
-    if len(entity.shape) == 1:
-        radius = entity.radius
-        mass = pi * radius * radius * entity.density
-        inertia = pi * 0.5 * radius * radius * radius * radius
-    else:
-        for i in range(len(entity.shape)):
-            face = (entity.shape[i - 1], entity.shape[i])
-            face_mass = entity.density * 0.5 * abs(face[0].cross(face[1])[2])
-            mass += face_mass
-            inertia += face_mass * (face[0].magnitude() + face[1].magnitude() + face[0].dot(face[1])) / 6
-    print(mass, inertia)
+    area = 0
+    mass = 0
+    inertia = 0
+    triangles = [(Vector(0, 0), entity.shape[i - 1], entity.shape[i]) for i in range(len(entity.shape))]
+    for tri in triangles:
+        tri_area = 0.5 * abs(det(tri[1] - tri[0], tri[2] - tri[0]))
+        tri_area_moment = (1/12) * (tri[0].x**2 + tri[0].y**2 + tri[1].x**2 + tri[1].y**2 + (tri[1].x * tri[2].x) + tri[2].x**2 + tri[0].x * (tri[1].x + tri[2].x) + (tri[1].y * tri[2].y) + tri[2].y**2 + tri[0].y * (tri[1].y + tri[2].y)) * abs((tri[0].y * tri[1].x) - (tri[0].x * tri[1].y) - (tri[0].y * tri[2].x) + (tri[1].y * tri[2].x) + (tri[0].x * tri[2].y) - (tri[1].x * tri[2].y))
+        area += tri_area
+        mass += tri_area * entity.density
+        inertia += tri_area_moment * entity.density
     return mass, inertia
 
 
@@ -28,8 +23,8 @@ class Entity:
         self.name = kwargs.get("name", "")
 
         self.density = kwargs.get("density", 0.5)
-        self.friction = kwargs.get("friction", 0.05)
-        self.restitution = kwargs.get("restitution", 0.005)
+        self.friction = kwargs.get("friction", 0.1)
+        self.restitution = kwargs.get("restitution", 0.25)
 
         self.texture = kwargs.get("texture", None)
         self.texture_loc = kwargs.get("texture_loc", Vector(0, 0))

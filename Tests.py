@@ -3,7 +3,7 @@ from Camera import Camera
 from LinAlg import Vector
 from Entity import Entity
 from Physics import Collision, sat
-from Shapes import center_rectangle
+from Shapes import center_rectangle, test
 from Suntherland import suntherland
 
 pygame.init()
@@ -16,6 +16,9 @@ color = (0, 255, 255)
 
 a = Entity(1, shape=center_rectangle(100, 100), loc=Vector(-50, -50), color=color)
 b = Entity(2, shape=center_rectangle(100, 100), loc=Vector(50, 50), color=color, density=1)
+
+test = Entity(3, shape=test())
+
 follow = False
 running = True
 while running:

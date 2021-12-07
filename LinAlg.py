@@ -225,3 +225,8 @@ class Matrix3:
 
 def cross(x: Vector):
     return Vector(-x.y, x.x)
+
+
+def det(a, b):
+    return a.x * b.y - a.y * b.x
+

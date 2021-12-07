@@ -22,7 +22,6 @@ class Collision:
             self.contact_point = sum(self.manifold) / len(self.manifold)
 
     def resolve(self):
-
         total = self.a.mass + self.b.mass
         inv_total = self.a.mass_inv + self.b.mass_inv
         # Translate objects apart
@@ -54,7 +53,7 @@ class Collision:
 
         self.a.force += -total_impulse
         self.b.force += total_impulse
-        self.a.torque += -a_perp.dot(total_impulse)
+        self.a.torque += a_perp.dot(-total_impulse)
         self.b.torque += b_perp.dot(total_impulse)
         self.a.on_collide(self)
         self.b.on_collide(self)
@@ -72,19 +71,20 @@ class Collision:
         relative_v = a.vel - b.vel + cross(a.rot_vel * (p - a.loc) - b.rot_vel * (p - b.loc))
 
         e = (a.restitution + b.restitution) / 2
-        j = ((-(1 + e) * relative_v).dot(self.axis)) / (self.axis.dot(self.axis * inv_total) )#+ ((cross(p - a.loc).dot(self.axis))**2 / a.inertia) + ((cross(p - b.loc).dot(self.axis))**2 * b.inertia))
+        j = ((-(1 + e) * relative_v).dot(self.axis)) / (self.axis.dot(self.axis * inv_total) + ((cross(p - a.loc).dot(self.axis))**2 / a.inertia) + ((cross(p - b.loc).dot(self.axis))**2 * b.inertia))
 
         jn = j * self.axis
         a.force += jn
         b.force += -jn
-        a.torque += cross(p - a.loc).dot(-jn) * a.inertia_inv
-        b.torque += -cross(p - b.loc).dot(jn) * b.inertia_inv
+        a.torque += cross(p - a.loc).dot(-jn)
+        b.torque += cross(p - b.loc).dot(jn)
         print(a.vel)
 
         a.on_collide(self)
         b.on_collide(self)
         self.total_impulse = jn.copy()
         """
+
 
 
 
